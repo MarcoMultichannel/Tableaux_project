@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+}
+
+group 'org.project.tableaux'
+version '1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    implementation 'net.sourceforge.owlapi:owlapi-api:5.1.19'
+    implementation 'net.sourceforge.owlapi:owlapi-apibinding:5.1.19'
+}
+
+test {
+    useJUnitPlatform()
+}
