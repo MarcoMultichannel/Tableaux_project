@@ -1,0 +1,11 @@
+Prefix: ex: <#>
+Ontology: <https://github.com/MarcoMultichannel/Tableaux_project/C>
+
+Class: ex:A
+Class: ex:B
+Class: ex:C
+Class: ex:D
+ObjectProperty: ex:R
+
+Class: ex:Concept
+   EquivalentTo: ex:A and ex:B and (ex:C or ex:D) and (ex:R some ex:B) and (ex:R only ex:A)

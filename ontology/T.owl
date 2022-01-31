@@ -1,0 +1,13 @@
+Prefix: ex: <http://example.org/>
+Ontology: <https://github.com/MarcoMultichannel/Tableaux_project/TBox>
+
+Class: ex:A
+Class: ex:B
+Class: ex:C
+Class: ex:D
+
+Class: ex:D
+   SubClassOf: ex:C
+
+Class: ex:B
+   SubClassOf: ex:A
