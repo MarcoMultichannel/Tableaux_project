@@ -53,6 +53,12 @@ public class MyOWLParser {
         }
         return new ArrayList<>(((OWLObjectUnionOf)or).getOperands());
     }
+    public OWLClassExpression unpackNegation(OWLClassExpression not) throws OWLException {
+        if(not.getClassExpressionType()!= ClassExpressionType.OBJECT_COMPLEMENT_OF){
+            throw new OWLException("Not an OBJECT_UNION_OF");
+        }
+        return ((OWLObjectComplementOf)not).getOperand();
+    }
     public OWLClassExpression getExistClassExpression(OWLClassExpression exists) {
         OWLObjectSomeValuesFrom ce= (OWLObjectSomeValuesFrom) exists;
         return ce.getFiller();
@@ -93,5 +99,8 @@ public class MyOWLParser {
     }
     public boolean isClass(OWLClassExpression ce){
         return ce.isOWLClass();
+    }
+    public boolean isNegation(OWLClassExpression ce){
+        return ce.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF;
     }
 }
