@@ -15,7 +15,7 @@ public class MyOWLParser {
         return manager.loadOntologyFromOntologyDocument(new File(path));
     }
     public OWLOntology loadOntologyFromString(String inputStream){
-        //TODO
+        //TODO caricare ontologia da stringa invece che da file
         return null;
     }
     public List<OWLEquivalentClassesAxiom> getEquivalentClassesAxioms(OWLOntology ont){

@@ -8,4 +8,4 @@ Class: ALC:D
 ObjectProperty: ALC:R
 
 Class: ALC:Concept
-   EquivalentTo: (ALC:R some (ALC:A or ALC:B)) and (ALC:R some ALC:C) and (ALC:R some ALC:D)
+   EquivalentTo: (ALC:R some (ALC:A or ALC:B)) and (ALC:A or ALC:D) and ALC:D

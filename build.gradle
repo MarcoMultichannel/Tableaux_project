@@ -16,6 +16,7 @@ dependencies {
     implementation 'net.sourceforge.owlapi:owlapi-apibinding:5.1.19'
     implementation 'org.apache.jena:jena-commonsrdf:4.4.0'
     implementation 'guru.nidi:graphviz-rough:0.18.1'
+    implementation 'org.apache.commons:commons-text:1.9'
 }
 
 test {

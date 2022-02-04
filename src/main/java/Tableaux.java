@@ -1,13 +1,9 @@
-import guru.nidi.graphviz.attribute.Attributes;
-import guru.nidi.graphviz.attribute.Color;
-import guru.nidi.graphviz.attribute.ForNode;
-import guru.nidi.graphviz.attribute.Label;
-import guru.nidi.graphviz.engine.Format;
-import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.engine.GraphvizCmdLineEngine;
-import guru.nidi.graphviz.engine.GraphvizV8Engine;
-import guru.nidi.graphviz.model.LinkTarget;
-import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.attribute.*;
+import guru.nidi.graphviz.engine.*;
+import guru.nidi.graphviz.model.*;
+import org.apache.commons.lang3.CharUtils;
+import org.apache.commons.text.StringEscapeUtils;
+
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.rdf.model.*;
@@ -21,14 +17,14 @@ import static guru.nidi.graphviz.model.Factory.*;
 
 public class Tableaux {
     private static final String ALC_NAMESPACE="urn://alc/";
-    private static final String NAMESPACE="urn://talbeaux_project#";
+    private static final String TAB_NAMESPACE="urn://talbeaux_project#";
     private static final String CONCEPT_NAME="<"+ALC_NAMESPACE+"Concept>";
     private final OWLClassExpression concept;
     private OWLOntology terminology;
     private final MyOWLParser parser;
     private HashSet<Individual> individuals;
     private Model model;
-
+    //TODO: gestione del TOP e del BOTTOM
     public Tableaux(OWLOntology C) throws OWLException {
         //Carico il concetto C
         this.parser=new MyOWLParser();
@@ -168,9 +164,9 @@ public class Tableaux {
     private void createRDFmodel() throws OWLException {
         model = ModelFactory.createDefaultModel();
         for(Individual i:individuals){
-            String individualURI = NAMESPACE+"x"+i.id;
+            String individualURI = TAB_NAMESPACE+"x"+i.id;
             Resource individualResource = model.createResource(individualURI);
-            Property hasLabel=model.createProperty( NAMESPACE + "L" );
+            Property hasLabel=model.createProperty( TAB_NAMESPACE + "L" );
             individualResource.addLiteral(hasLabel, formatLabel(i.label));
         }
         for(Individual x:individuals){
@@ -178,13 +174,13 @@ public class Tableaux {
                 String roleURI=formatRole(role);
                 Property hasArch=model.createProperty(roleURI);
                 for(Individual y:x.arches.get(role)) {
-                    Resource x_resource = model.getResource(NAMESPACE+"x"+x.id);
-                    Resource y_resource = model.getResource(NAMESPACE+"x"+y.id);
+                    Resource x_resource = model.getResource(TAB_NAMESPACE+"x"+x.id);
+                    Resource y_resource = model.getResource(TAB_NAMESPACE+"x"+y.id);
                     x_resource.addProperty(hasArch, y_resource);
                 }
             }
         }
-        model.setNsPrefix( "tab", NAMESPACE );
+        model.setNsPrefix( "tab", TAB_NAMESPACE );
         model.setNsPrefix( "alc", ALC_NAMESPACE );
     }
     public void save(String path) throws OWLException, IOException {
@@ -197,14 +193,19 @@ public class Tableaux {
         MutableGraph g = mutGraph("Tableaux");
         g.setDirected(true);
         Graph rdfGraph=model.getGraph();
+        Map<String,String> prefixMap=model.getNsPrefixMap();
         for(Triple triple:rdfGraph.stream().toList()){
             String subject=triple.getSubject().toString();
             String predicate=triple.getPredicate().toString();
-            String object=triple.getObject().toString();
-            g.add(mutNode(subject).addLink(to(mutNode(object).add(Attributes.attr("charset","UTF-8"))).with(Label.of(predicate))));
-            //TODO prefissi, unicode e formattazione
+            String object=htmlEncode(triple.getObject().toString());
+            for(String prefix:prefixMap.keySet()){
+                subject=subject.replaceAll(prefixMap.get(prefix),prefix+":");
+                predicate=predicate.replaceAll(prefixMap.get(prefix),prefix+":");
+                object=object.replaceAll(prefixMap.get(prefix),prefix+":");
+            }
+            g.add(mutNode(subject).addLink(to(mutNode(object).add(Attributes.attr("fontname","Cambria Math"))).with(Label.of(predicate))));
         }
-        return Graphviz.fromGraph(g).render(Format.PNG).toImage();
+        return Graphviz.fromGraph(g).scale(1.4).render(Format.SVG).toImage();
     }
     private String formatLabel(List<OWLClassExpression> label) throws OWLException {
         StringBuilder result= new StringBuilder();
@@ -218,7 +219,7 @@ public class Tableaux {
     private String formatClassExpression(OWLClassExpression ce) throws OWLException {
         StringBuilder result= new StringBuilder();
         if(parser.isClass(ce))
-            result.append(formatAtomicClass(ce).split(ALC_NAMESPACE)[1]);
+            result.append(formatAtomicClass(ce));
         else if (parser.isNegation(ce)) {
             result.append("¬(");
             result.append(formatClassExpression(ce));
@@ -248,7 +249,7 @@ public class Tableaux {
             OWLClassExpression existsConcept=parser.getExistClassExpression(ce);
             OWLObjectPropertyExpression existsRole=parser.getExistRole(ce);
             result.append("(∃");
-            result.append(formatRole(existsRole).split(ALC_NAMESPACE)[1]);
+            result.append(formatRole(existsRole));
             result.append(".(");
             result.append(formatClassExpression(existsConcept));
             result.append(")");
@@ -257,7 +258,7 @@ public class Tableaux {
             OWLClassExpression foreachConcept=parser.getForeachClassExpression(ce);
             OWLObjectPropertyExpression foreachRole=parser.getForeachRole(ce);
             result.append("(∀");
-            result.append(formatRole(foreachRole).split(ALC_NAMESPACE)[1]);
+            result.append(formatRole(foreachRole));
             result.append(".(");
             result.append(formatClassExpression(foreachConcept));
             result.append(")");
@@ -269,5 +270,16 @@ public class Tableaux {
     }
     private String formatAtomicClass(OWLClassExpression ce){
         return ce.toString().replaceAll("[<>]", "");
+    }
+    private String htmlEncode(final String string) {
+        String result=string;
+        for (int i = 0; i < string.length(); i++) {
+            result=result.replace("∀","&#x2200;");
+            result=result.replace("∃","&#x2203;");
+            result=result.replace("⊔","&#x2294;");
+            result=result.replace("⊓","&#x2293;");
+            result=result.replace("¬","&#xac;");
+        }
+        return result;
     }
 }

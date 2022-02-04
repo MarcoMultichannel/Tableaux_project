@@ -14,8 +14,8 @@ public class TableauxMain {
 
     public static void showImage(BufferedImage img){
         JFrame frame = new JFrame("Tableaux");
-        frame.setSize(1500,600);
-        frame.setLocation(200,100);
+        frame.setSize(1700,600);
+        frame.setLocation(100,100);
         frame.add(new JLabel(new ImageIcon(img)));
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
