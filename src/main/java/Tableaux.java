@@ -24,7 +24,6 @@ public class Tableaux {
     private final MyOWLParser parser;
     private HashSet<Individual> individuals;
     private Model model;
-    //TODO: gestione del TOP e del BOTTOM
     public Tableaux(OWLOntology C) throws OWLException {
         //Carico il concetto C
         this.parser=new MyOWLParser();
@@ -147,7 +146,10 @@ public class Tableaux {
         HashSet<OWLClass> atomicClasses=new HashSet<>();
         HashSet<OWLClass> clashClasses=new HashSet<>();
         for(OWLClassExpression ce:x.label){
-            if(parser.isClass(ce)){
+            if(parser.isBottom(ce)){
+                clashClasses.add((OWLClass)ce);
+            }
+            else if(parser.isClass(ce)){
                 OWLClass c=(OWLClass)ce;
                 atomicClasses.add(c);
             }
@@ -218,7 +220,11 @@ public class Tableaux {
     }
     private String formatClassExpression(OWLClassExpression ce) throws OWLException {
         StringBuilder result= new StringBuilder();
-        if(parser.isClass(ce))
+        if (parser.isTop(ce))
+            result.append("⊤");
+        else if (parser.isBottom(ce))
+            result.append("⊥");
+        else if(parser.isClass(ce))
             result.append(formatAtomicClass(ce));
         else if (parser.isNegation(ce)) {
             result.append("¬(");
@@ -274,6 +280,8 @@ public class Tableaux {
     private String htmlEncode(final String string) {
         String result=string;
         for (int i = 0; i < string.length(); i++) {
+            result=result.replace("⊤","&#x22a4;");
+            result=result.replace("⊥","&#x22a5;");
             result=result.replace("∀","&#x2200;");
             result=result.replace("∃","&#x2203;");
             result=result.replace("⊔","&#x2294;");

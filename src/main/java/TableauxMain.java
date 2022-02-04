@@ -8,9 +8,7 @@ public class TableauxMain {
     static {
         System.setProperty("java.awt.headless", "false");
     }
-
     public static final String terminologyPath="ontology/T.owl";
-    public static final String conceptPath="ontology/C.owl";
 
     public static void showImage(BufferedImage img){
         JFrame frame = new JFrame("Tableaux");
@@ -21,10 +19,20 @@ public class TableauxMain {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
     public static void main(String[] args) {
+        String conceptOntology= """
+                Prefix: ALC: <urn://alc/>
+                Class: ALC:A
+                Class: ALC:B
+                Class: ALC:C
+                Class: ALC:D
+                ObjectProperty: ALC:R
+                Class: ALC:Concept
+                   EquivalentTo: (ALC:R some (ALC:A or ALC:B)) and (owl:Thing or owl:Nothing)""";
         MyOWLParser parser=new MyOWLParser();
         try {
-            OWLOntology concept = parser.loadOntologyFromFile(conceptPath);
-            Tableaux tab=new Tableaux(concept);
+            OWLOntology concept = parser.loadOntologyFromString(conceptOntology);
+            OWLOntology terminology = parser.loadOntologyFromFile(terminologyPath);
+            Tableaux tab=new Tableaux(concept,terminology);
             tab.execute();
             tab.save("result.rdf");
             BufferedImage img=tab.toImage();

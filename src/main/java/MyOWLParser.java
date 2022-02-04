@@ -1,4 +1,5 @@
 import org.semanticweb.owlapi.apibinding.OWLManager;
+import org.semanticweb.owlapi.io.StringDocumentSource;
 import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.model.parameters.Imports;
 
@@ -14,9 +15,9 @@ public class MyOWLParser {
     public OWLOntology loadOntologyFromFile(String path) throws OWLOntologyCreationException {
         return manager.loadOntologyFromOntologyDocument(new File(path));
     }
-    public OWLOntology loadOntologyFromString(String inputStream){
-        //TODO caricare ontologia da stringa invece che da file
-        return null;
+    public OWLOntology loadOntologyFromString(String document) throws OWLOntologyCreationException {
+        StringDocumentSource ontologyString=new StringDocumentSource(document);
+        return manager.loadOntologyFromOntologyDocument(ontologyString);
     }
     public List<OWLEquivalentClassesAxiom> getEquivalentClassesAxioms(OWLOntology ont){
         return new ArrayList<>(ont.getAxioms(AxiomType.EQUIVALENT_CLASSES,Imports.EXCLUDED));
@@ -95,10 +96,16 @@ public class MyOWLParser {
     public boolean isForeach(OWLClassExpression ce){
         return ce.getClassExpressionType() == ClassExpressionType.OBJECT_ALL_VALUES_FROM;
     }
+    public boolean isNegation(OWLClassExpression ce){
+        return ce.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF;
+    }
     public boolean isClass(OWLClassExpression ce){
         return ce.isOWLClass();
     }
-    public boolean isNegation(OWLClassExpression ce){
-        return ce.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF;
+    public boolean isTop(OWLClassExpression ce){
+        return ce.isOWLThing();
+    }
+    public boolean isBottom(OWLClassExpression ce){
+        return ce.isOWLNothing();
     }
 }
