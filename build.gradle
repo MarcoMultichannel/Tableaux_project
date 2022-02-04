@@ -14,7 +14,8 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
     implementation 'net.sourceforge.owlapi:owlapi-api:5.1.19'
     implementation 'net.sourceforge.owlapi:owlapi-apibinding:5.1.19'
-    implementation 'guru.nidi:graphviz-java-parent:0.18.1'
+    implementation 'org.apache.jena:jena-commonsrdf:4.4.0'
+    implementation 'guru.nidi:graphviz-rough:0.18.1'
 }
 
 test {

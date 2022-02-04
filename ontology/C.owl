@@ -1,4 +1,4 @@
-Prefix: ALC: <#>
+Prefix: ALC: <urn://alc/>
 Ontology: <https://github.com/MarcoMultichannel/Tableaux_project/C>
 
 Class: ALC:A
@@ -8,4 +8,4 @@ Class: ALC:D
 ObjectProperty: ALC:R
 
 Class: ALC:Concept
-   EquivalentTo: ALC:A and ALC:B and (not(ALC:A) or (not(ALC:B)))
+   EquivalentTo: (ALC:R some (ALC:A or ALC:B)) and (ALC:R some ALC:C) and (ALC:R some ALC:D)

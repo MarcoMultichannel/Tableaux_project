@@ -20,11 +20,9 @@ public class MyOWLParser {
     }
     public List<OWLEquivalentClassesAxiom> getEquivalentClassesAxioms(OWLOntology ont){
         return new ArrayList<>(ont.getAxioms(AxiomType.EQUIVALENT_CLASSES,Imports.EXCLUDED));
-        //TODO che vuol dire Imports.EXCLUDED?
     }
     public List<OWLSubClassOfAxiom> getSubClassAxioms(OWLOntology ont){
         return new ArrayList<>(ont.getAxioms(AxiomType.SUBCLASS_OF,Imports.EXCLUDED));
-        //TODO che vuol dire Imports.EXCLUDED?
     }
     public List<OWLClassExpression> unpackEquilvalentClassesAxiom(OWLEquivalentClassesAxiom axiom) throws OWLException {
         if(axiom.getAxiomType()!=AxiomType.EQUIVALENT_CLASSES){
