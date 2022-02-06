@@ -3,6 +3,7 @@ import org.semanticweb.owlapi.model.*;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Set;
 
 public class TableauxMain {
     static {
@@ -27,13 +28,21 @@ public class TableauxMain {
                 Class: ALC:D
                 ObjectProperty: ALC:R
                 Class: ALC:Concept
-                   EquivalentTo: (ALC:R some (ALC:A or ALC:B)) and (owl:Thing or owl:Nothing)""";
+                   EquivalentTo: (ALC:R some (ALC:A or ALC:B)) and ALC:A and ALC:B and not(ALC:A) and not(ALC:B)""";
         MyOWLParser parser=new MyOWLParser();
         try {
             OWLOntology concept = parser.loadOntologyFromString(conceptOntology);
             OWLOntology terminology = parser.loadOntologyFromFile(terminologyPath);
             Tableaux tab=new Tableaux(concept,terminology);
-            tab.execute();
+            System.out.println("Concetto in input: "+tab.getConcept());
+            float timeElapsed=tab.execute();
+            System.out.println("Tempo impiegato: "+timeElapsed+"ms");
+
+            if(tab.isClashFree())
+                System.out.println("Il concetto C è soddisfacibile");
+            else
+                System.out.println("Sono stati trovati i seguenti clash: "+tab.getClashes());
+
             tab.save("result.rdf");
             BufferedImage img=tab.toImage();
             showImage(img);

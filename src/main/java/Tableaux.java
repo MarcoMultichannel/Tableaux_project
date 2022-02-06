@@ -1,8 +1,6 @@
 import guru.nidi.graphviz.attribute.*;
 import guru.nidi.graphviz.engine.*;
 import guru.nidi.graphviz.model.*;
-import org.apache.commons.lang3.CharUtils;
-import org.apache.commons.text.StringEscapeUtils;
 
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;
@@ -24,7 +22,9 @@ public class Tableaux {
     private final MyOWLParser parser;
     private HashSet<Individual> individuals;
     private Model model;
+    private Set<OWLClass> clashes;
     public Tableaux(OWLOntology C) throws OWLException {
+        //TODO supporta tutti i prefissi in C automaticamente
         //Carico il concetto C
         this.parser=new MyOWLParser();
         List<OWLEquivalentClassesAxiom> axioms=parser.getEquivalentClassesAxioms(C);
@@ -47,21 +47,31 @@ public class Tableaux {
         this.terminology=T;
         //TODO parsing della terminologia
     }
-    public void execute(){
+    public float execute(){
         individuals=new HashSet<>();
+        float timeElapsed=0;
         try {
-            Set<OWLClass> result=computeTableaux(new Individual(),concept);
-            if(result!=null && !result.isEmpty())
-                System.out.println("Il concetto ha un clash nelle seguenti classi:"+result);
-            else
-                System.out.println("Il concetto è soddisfacibile");
+            long start = System.nanoTime();
+            clashes=computeTableaux(new Individual(),concept);
+            long finish = System.nanoTime();
+            timeElapsed=(finish - start)/1000000f;
             createRDFmodel();
         } catch (OWLException e) {
             System.out.println("Errore nel tableaux");
             e.printStackTrace();
         }
+        return timeElapsed;
+    }
+    public String getConcept() throws OWLException {
+        return formatClassExpression(concept);
+    }
+    public String getClashes() throws OWLException {
+        return formatClashes(clashes);
     }
 
+    public boolean isClashFree(){
+        return (clashes==null || clashes.isEmpty());
+    }
     private Set<OWLClass> computeTableaux(Individual x, OWLClassExpression concept) throws OWLException {
         //INPUT: individuo e concetto da aggiungere
         //OUTPUT: Se insoddisfacibile, insieme di classi in Clash
@@ -218,6 +228,24 @@ public class Tableaux {
         }
         return result.toString();
     }
+    private String formatClashes(Set<OWLClass> clashes) {
+        StringBuilder result= new StringBuilder();
+        Iterator<OWLClass> clashes_iterator=clashes.iterator();
+        for(int i=0;i<clashes.size();i++){
+            OWLClass clash=clashes_iterator.next();
+            if (parser.isBottom(clash))
+                result.append("⊥");
+            else{
+                result.append(formatAtomicClass(clash));
+                result.append(", ¬");
+                result.append(formatAtomicClass(clash));
+            }
+
+            if(i!=clashes.size()-1)
+                result.append(", ");
+        }
+        return result.toString();
+    }
     private String formatClassExpression(OWLClassExpression ce) throws OWLException {
         StringBuilder result= new StringBuilder();
         if (parser.isTop(ce))
@@ -228,7 +256,7 @@ public class Tableaux {
             result.append(formatAtomicClass(ce));
         else if (parser.isNegation(ce)) {
             result.append("¬(");
-            result.append(formatClassExpression(ce));
+            result.append(formatClassExpression(parser.unpackNegation(ce)));
             result.append(")");
         }
         else if(parser.isIntersection(ce)){
