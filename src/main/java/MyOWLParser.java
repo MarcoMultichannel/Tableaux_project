@@ -53,19 +53,25 @@ public class MyOWLParser {
         if(and.getClassExpressionType()!= ClassExpressionType.OBJECT_INTERSECTION_OF){
             throw new OWLException("Not an OBJECT_INTERSECTION_OF");
         }
-        ArrayList<OWLClassExpression> resultList=new ArrayList<>(((OWLObjectIntersectionOf)and).getOperands());
-        ArrayList<OWLClassExpression> recursiveIntersections=new ArrayList<>();
-        for(OWLClassExpression ce:resultList)
+        ArrayList<OWLClassExpression> resultList=new ArrayList<>();
+        for(OWLClassExpression ce:((OWLObjectIntersectionOf) and).getOperands())
             if(isIntersection(ce))
-                recursiveIntersections.addAll(unpackIntersection(ce));
-        resultList.addAll(recursiveIntersections);
+                resultList.addAll(unpackIntersection(ce));
+            else
+                resultList.add(ce);
         return resultList;
     }
     public List<OWLClassExpression> unpackUnion(OWLClassExpression or) throws OWLException {
         if(or.getClassExpressionType()!= ClassExpressionType.OBJECT_UNION_OF){
             throw new OWLException("Not an OBJECT_UNION_OF");
         }
-        return new ArrayList<>(((OWLObjectUnionOf)or).getOperands());
+        ArrayList<OWLClassExpression> resultList=new ArrayList<>();
+        for(OWLClassExpression ce:((OWLObjectUnionOf) or).getOperands())
+            if(isUnion(ce))
+                resultList.addAll(unpackUnion(ce));
+            else
+                resultList.add(ce);
+        return resultList;
     }
     public OWLClassExpression unpackNegation(OWLClassExpression not) throws OWLException {
         if(not.getClassExpressionType()!= ClassExpressionType.OBJECT_COMPLEMENT_OF){

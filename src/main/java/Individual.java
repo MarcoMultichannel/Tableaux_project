@@ -5,26 +5,41 @@ import java.util.*;
 
 public class Individual {
     public int id;
-    public HashSet<OWLClassExpression> ands, ors, exists, foreachs, visited;
+    public Queue<OWLClassExpression> ands, ors, exists, foreaches;
     public ArrayList<OWLClassExpression> label;
     public HashMap<OWLObjectPropertyExpression, HashSet<Individual>> arches;
     public HashSet<Individual> individualsConnected;
+    public ArrayList<ArrayList<OWLClassExpression>> previousLabels;
     public static int numIndividuals=0;
 
     private final MyOWLParser parser;
     public Individual(){
         this.id=numIndividuals;
         numIndividuals++;
-        arches=new HashMap<>();
         parser=new MyOWLParser();
 
-        label=new ArrayList<>();
-        ands=new HashSet<>();
-        ors=new HashSet<>();
-        exists=new HashSet<>();
-        foreachs=new HashSet<>();
-        visited=new HashSet<>();
+        ands = new LinkedList<>();
+        ors = new LinkedList<>();
+        exists = new LinkedList<>();
+        foreaches = new LinkedList<>();
+
+        arches=new HashMap<>();
         individualsConnected=new HashSet<>();
+
+        previousLabels=new ArrayList<>();
+        label=new ArrayList<>();
+    }
+    public Individual(Individual x){
+        this.id=x.id;
+        this.arches=new HashMap<>(x.arches);
+        this.parser=new MyOWLParser();
+        this.label=new ArrayList<>(x.label);
+        this.ands=new LinkedList<>(x.ands);
+        this.ors=new LinkedList<>(x.ors);
+        this.exists=new LinkedList<>(x.exists);
+        this.foreaches=new LinkedList<>(x.foreaches);
+        this.individualsConnected=new HashSet<>(x.individualsConnected);
+        this.previousLabels=new ArrayList<>(x.previousLabels);
     }
     public void addConcept(OWLClassExpression ce){
         if(!label.contains(ce)){
@@ -35,7 +50,7 @@ public class Individual {
             else if (parser.isExists(ce))
                 exists.add(ce);
             else if (parser.isForeach(ce))
-                foreachs.add(ce);
+                foreaches.add(ce);
             label.add(ce);
         }
     }
@@ -43,14 +58,8 @@ public class Individual {
         for(OWLClassExpression ce:ce_list)
             addConcept(ce);
     }
-    public void removeConcept(OWLClassExpression ce){
-        label.remove(ce);
-    }
-    public void markAsVisited(OWLClassExpression ce){
-        visited.add(ce);
-    }
-    public boolean isVisited(OWLClassExpression ce){
-        return visited.contains(ce);
+    public void addClashLabel(ArrayList<OWLClassExpression> label){
+        previousLabels.add(new ArrayList<>(label));
     }
     public void newArchTo(OWLObjectPropertyExpression role, Individual y){
         this.individualsConnected.add(y);

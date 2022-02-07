@@ -1,9 +1,9 @@
-import org.semanticweb.owlapi.model.*;
+import org.semanticweb.owlapi.model.OWLException;
+import org.semanticweb.owlapi.model.OWLOntology;
 
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.util.Set;
 
 public class TableauxMain {
     static {
@@ -28,7 +28,7 @@ public class TableauxMain {
                 Class: ALC:D
                 ObjectProperty: ALC:R
                 Class: ALC:Concept
-                   EquivalentTo: (ALC:R some (ALC:A and ALC:B)) and (ALC:R only (ALC:A or ALC:C))""";
+                   EquivalentTo: ALC:A and ((not(ALC:A) and ALC:R some ALC:B) or (ALC:R some ALC:C)) and ((ALC:R only ALC:B) or (ALC:R only (not(ALC:A))))""";
         MyOWLParser parser=new MyOWLParser();
         try {
             OWLOntology concept = parser.loadOntologyFromString(conceptOntology);
@@ -41,10 +41,10 @@ public class TableauxMain {
             if(tab.isClashFree())
                 System.out.println("Il concetto C è soddisfacibile");
             else
-                System.out.println("Sono stati trovati i seguenti clash: "+tab.getClashes());
+                System.out.println("Il concetto C è insoddisfacibile");
 
             tab.save("result.rdf");
-            BufferedImage img=tab.toImage();
+            BufferedImage img=tab.toImage(false);
             showImage(img);
         } catch (OWLException e) {
             System.out.println("Errore.");

@@ -1,20 +1,27 @@
-import guru.nidi.graphviz.attribute.*;
-import guru.nidi.graphviz.engine.*;
-import guru.nidi.graphviz.model.*;
-
+import guru.nidi.graphviz.attribute.Attributes;
+import guru.nidi.graphviz.attribute.Label;
+import guru.nidi.graphviz.engine.Format;
+import guru.nidi.graphviz.engine.Graphviz;
+import guru.nidi.graphviz.engine.GraphvizCmdLineEngine;
+import guru.nidi.graphviz.model.MutableGraph;
 import org.apache.jena.graph.Graph;
 import org.apache.jena.graph.Triple;
-import org.apache.jena.rdf.model.*;
+import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Property;
+import org.apache.jena.rdf.model.Resource;
 import org.semanticweb.owlapi.model.*;
 
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.*;
 
 import static guru.nidi.graphviz.model.Factory.*;
 
 public class Tableaux {
-    private static final String TAB_NAMESPACE="urn://talbeaux_project#";
+    private static final String TAB_NAMESPACE="urn://tableaux_project#";
     private static final String ALC_NAMESPACE="urn://alc/";
     private static final String CONCEPT_NAME="<"+ALC_NAMESPACE+"Concept>";
     private final Map<String, String> prefix_nsMap;
@@ -70,9 +77,6 @@ public class Tableaux {
     public String getConcept() throws OWLException {
         return replaceNSwithPrefixes(formatClassExpression(concept));
     }
-    public String getClashes() throws OWLException {
-        return replaceNSwithPrefixes(formatClashes(clashes));
-    }
 
     public boolean isClashFree(){
         return (clashes==null || clashes.isEmpty());
@@ -81,25 +85,20 @@ public class Tableaux {
         //INPUT: individuo e concetto da aggiungere
         //OUTPUT: Se insoddisfacibile, insieme di classi in Clash
                 //Altrimenti NULL
-
         individuals.add(x);
-
         //AND
-        for(OWLClassExpression ce:x.ands) {
-            //Marco l'OR come visitato
-            if (x.isVisited(ce)) break;
-            x.markAsVisited(ce);
-            x.addConcepts(parser.unpackIntersection(ce));
+        while (!x.ands.isEmpty()) {
+            x.addConcepts(parser.unpackIntersection(x.ands.remove()));
         }
         //OR
-        for(OWLClassExpression ce:x.ors){
-            //Marco l'OR come visitato
-            if(x.isVisited(ce)) break;
-            x.markAsVisited(ce);
-
-            List<OWLClassExpression> disjoints = parser.unpackUnion(ce);
+        while (!x.ors.isEmpty()) {
+            List<OWLClassExpression> disjoints = parser.unpackUnion(x.ors.remove());
             Set<OWLClass> clashes=null;
             for(OWLClassExpression disjoint:disjoints){
+                //Mi salvo lo stato corrente per fare backtracking nel caso il disgiunto non va bene
+                Individual old_x=new Individual(x);
+                HashSet<Individual> old_individuals=new HashSet<>(individuals);
+
                 //Vedo se il disgiuto selezionato ha un CLASH
                 x.addConcept(disjoint);
                 clashes=computeTableaux(x);
@@ -107,11 +106,18 @@ public class Tableaux {
                 //Se è clash free, esco da loop
                 if (clashes==null || clashes.isEmpty()) break;
 
-                //Altrimenti lo rimuovo e provo un altro disgiunto
-                else x.removeConcept(disjoint);
+                //Altrimenti faccio backtracking
+                else
+                {
+                    individuals=old_individuals;
+                    individuals.remove(x);
+                    ArrayList<OWLClassExpression> clashLabel=x.label;
+                    x=old_x;
+                    x.addClashLabel(clashLabel);
+                }
             }
             //Se ha trovato un clash provando tutti i disgiunti restituisce l'ultimo clash
-            if (clashes==null || !clashes.isEmpty()) return clashes;
+            if (clashes!=null && !clashes.isEmpty()) return clashes;
         }
 
         //CLASH CHECK
@@ -120,7 +126,8 @@ public class Tableaux {
         //Creo una mappa per utilizzare un solo individuo per ogni ruolo
         HashMap<OWLObjectPropertyExpression, Individual> newArches=new HashMap<>();
 
-        for(OWLClassExpression ce:x.exists) {
+        while(!x.exists.isEmpty()){
+            OWLClassExpression ce=x.exists.remove();
             //Estraggo il ruolo ed il concetto dall'esiste
             OWLObjectPropertyExpression role = parser.getExistRole(ce);
             OWLClassExpression classExpression = parser.getExistClassExpression(ce);
@@ -139,11 +146,11 @@ public class Tableaux {
         }
 
         //PerOgni
-        for(OWLClassExpression ce:x.foreachs){
+        while(!x.foreaches.isEmpty()){
+            OWLClassExpression ce=x.foreaches.remove();
             //Estraggo il ruolo ed il concetto dal per ogni
             OWLObjectPropertyExpression role=parser.getForeachRole(ce);
             OWLClassExpression classExpression=parser.getForeachClassExpression(ce);
-
             //per ogni z tale che R(x,z) aggiungo il concetto
             for(Individual z:x.arches.get(role))
                 z.addConcept(classExpression);
@@ -180,12 +187,6 @@ public class Tableaux {
     }
     private void createRDFmodel() throws OWLException {
         model = ModelFactory.createDefaultModel();
-        for(Individual i:individuals){
-            String individualURI = TAB_NAMESPACE+"x"+i.id;
-            Resource individualResource = model.createResource(individualURI);
-            Property hasLabel=model.createProperty( TAB_NAMESPACE + "L" );
-            individualResource.addLiteral(hasLabel, formatLabel(i.label));
-        }
         for(Individual x:individuals){
             for(OWLObjectPropertyExpression role:x.arches.keySet()){
                 String roleURI=formatRole(role);
@@ -197,6 +198,21 @@ public class Tableaux {
                 }
             }
         }
+        for(Individual i:individuals){
+            String individualURI = TAB_NAMESPACE+"x"+i.id;
+            Resource individualResource = model.createResource(individualURI);
+            Property clash=model.createProperty( TAB_NAMESPACE + "CLASH" );
+            Property hasLabel=model.createProperty( TAB_NAMESPACE + "L" );
+            Property disjointLabel=model.createProperty( TAB_NAMESPACE + "OR" );
+            if(getClashes(i).isEmpty())
+                individualResource.addLiteral(hasLabel, formatLabel(i.label));
+            else {
+                individualResource.addLiteral(clash, formatClashes(getClashes(i)));
+                individualResource.addLiteral(hasLabel, formatLabel(i.label) + ", CLASH.");
+            }
+            for(ArrayList<OWLClassExpression> oldLabel:i.previousLabels)
+                individualResource.addLiteral(disjointLabel, formatLabel(oldLabel)+", CLASH.");
+        }
         model.setNsPrefix( "tab", TAB_NAMESPACE );
         for(String prefix:prefix_nsMap.keySet()) {
             model.setNsPrefix(prefix.split(":")[0], prefix_nsMap.get(prefix));
@@ -207,7 +223,7 @@ public class Tableaux {
         model.write(f,"TURTLE");
     }
 
-    public BufferedImage toImage() throws IOException {
+    public BufferedImage toImage(boolean addPrefixes) throws IOException {
         Graphviz.useEngine(new GraphvizCmdLineEngine());
         MutableGraph g = mutGraph("Tableaux");
         g.setDirected(true);
@@ -218,11 +234,19 @@ public class Tableaux {
             String predicate=triple.getPredicate().toString();
             String object=htmlEncode(triple.getObject().toString());
             for(String prefix:prefixMap.keySet()){
-                subject=subject.replaceAll(prefixMap.get(prefix),prefix+":");
-                predicate=predicate.replaceAll(prefixMap.get(prefix),prefix+":");
-                object=object.replaceAll(prefixMap.get(prefix),prefix+":");
+                String replacement="";
+                if(addPrefixes) replacement=prefix+":";
+                subject=subject.replaceAll(prefixMap.get(prefix),replacement);
+                predicate=predicate.replaceAll(prefixMap.get(prefix),replacement);
+                object=object.replaceAll(prefixMap.get(prefix),replacement);
+                if(!addPrefixes)
+                    object=object.replaceAll(prefix+":",replacement);
             }
-            g.add(mutNode(subject).addLink(to(mutNode(object).add(Attributes.attr("fontname","Cambria Math"))).with(Label.of(predicate))));
+            g.add(mutNode(subject).add(Attributes.attr("shape","rectangle")).addLink(to(
+                    mutNode(object).add(Attributes.attr("shape","rectangle"))
+                            .add(Attributes.attr("fontname","Cambria Math")))
+                                .with(Label.of(predicate))));
+            g.graphAttrs().add(Attributes.attr("rankdir","LR"));
         }
         return Graphviz.fromGraph(g).scale(1.4).render(Format.SVG).toImage();
     }
@@ -262,16 +286,27 @@ public class Tableaux {
         else if(parser.isClass(ce))
             result.append(formatAtomicClass(ce));
         else if (parser.isNegation(ce)) {
-            result.append("¬(");
-            result.append(formatClassExpression(parser.unpackNegation(ce)));
-            result.append(")");
+            result.append("¬");
+            OWLClassExpression operand=parser.unpackNegation(ce);
+            if(parser.isClass(operand) || parser.isNegation(operand))
+                result.append(formatClassExpression(operand));
+            else{
+                result.append("(");
+                result.append(formatClassExpression(operand));
+                result.append(")");
+            }
         }
         else if(parser.isIntersection(ce)){
             List<OWLClassExpression> ands=parser.unpackIntersection(ce);
             for(int i=0;i<ands.size();i++){
-                result.append("(");
-                result.append(formatClassExpression(ands.get(i)));
-                result.append(")");
+                OWLClassExpression operand=ands.get(i);
+                if(parser.isClass(operand) || parser.isNegation(operand))
+                    result.append(formatClassExpression(operand));
+                else{
+                    result.append("(");
+                    result.append(formatClassExpression(operand));
+                    result.append(")");
+                }
                 if(i!=ands.size()-1)
                     result.append(" ⊓ ");
             }
@@ -279,9 +314,14 @@ public class Tableaux {
         else if(parser.isUnion(ce)){
             List<OWLClassExpression> ors=parser.unpackUnion(ce);
             for(int i=0;i<ors.size();i++){
-                result.append("(");
-                result.append(formatClassExpression(ors.get(i)));
-                result.append(")");
+                OWLClassExpression operand=ors.get(i);
+                if(parser.isClass(operand) || parser.isNegation(operand))
+                    result.append(formatClassExpression(operand));
+                else{
+                    result.append("(");
+                    result.append(formatClassExpression(operand));
+                    result.append(")");
+                }
                 if(i!=ors.size()-1)
                     result.append(" ⊔ ");
             }
@@ -289,20 +329,30 @@ public class Tableaux {
         else if(parser.isExists(ce)){
             OWLClassExpression existsConcept=parser.getExistClassExpression(ce);
             OWLObjectPropertyExpression existsRole=parser.getExistRole(ce);
-            result.append("(∃");
+            result.append("∃");
             result.append(formatRole(existsRole));
-            result.append(".(");
-            result.append(formatClassExpression(existsConcept));
-            result.append(")");
+            result.append(".");
+            if(parser.isClass(existsConcept) || parser.isNegation(existsConcept))
+                result.append(formatClassExpression(existsConcept));
+            else{
+                result.append("(");
+                result.append(formatClassExpression(existsConcept));
+                result.append(")");
+            }
         }
         else if(parser.isForeach(ce)){
             OWLClassExpression foreachConcept=parser.getForeachClassExpression(ce);
             OWLObjectPropertyExpression foreachRole=parser.getForeachRole(ce);
-            result.append("(∀");
+            result.append("∀");
             result.append(formatRole(foreachRole));
-            result.append(".(");
-            result.append(formatClassExpression(foreachConcept));
-            result.append(")");
+            result.append(".");
+            if(parser.isClass(foreachConcept) || parser.isNegation(foreachConcept))
+                result.append(formatClassExpression(foreachConcept));
+            else{
+                result.append("(");
+                result.append(formatClassExpression(foreachConcept));
+                result.append(")");
+            }
         }
         return result.toString();
     }
