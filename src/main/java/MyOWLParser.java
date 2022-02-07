@@ -44,7 +44,13 @@ public class MyOWLParser {
         if(and.getClassExpressionType()!= ClassExpressionType.OBJECT_INTERSECTION_OF){
             throw new OWLException("Not an OBJECT_INTERSECTION_OF");
         }
-        return new ArrayList<>(((OWLObjectIntersectionOf)and).getOperands());
+        ArrayList<OWLClassExpression> resultList=new ArrayList<>(((OWLObjectIntersectionOf)and).getOperands());
+        ArrayList<OWLClassExpression> recursiveIntersections=new ArrayList<>();
+        for(OWLClassExpression ce:resultList)
+            if(isIntersection(ce))
+                recursiveIntersections.addAll(unpackIntersection(ce));
+        resultList.addAll(recursiveIntersections);
+        return resultList;
     }
     public List<OWLClassExpression> unpackUnion(OWLClassExpression or) throws OWLException {
         if(or.getClassExpressionType()!= ClassExpressionType.OBJECT_UNION_OF){

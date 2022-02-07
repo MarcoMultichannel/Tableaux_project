@@ -52,7 +52,9 @@ public class Tableaux {
         float timeElapsed=0;
         try {
             long start = System.nanoTime();
-            clashes=computeTableaux(new Individual(),concept);
+            Individual x=new Individual();
+            x.addConcept(concept);
+            clashes=computeTableaux(x);
             long finish = System.nanoTime();
             timeElapsed=(finish - start)/1000000f;
             createRDFmodel();
@@ -72,7 +74,7 @@ public class Tableaux {
     public boolean isClashFree(){
         return (clashes==null || clashes.isEmpty());
     }
-    private Set<OWLClass> computeTableaux(Individual x, OWLClassExpression concept) throws OWLException {
+    private Set<OWLClass> computeTableaux(Individual x) throws OWLException {
         //INPUT: individuo e concetto da aggiungere
         //OUTPUT: Se insoddisfacibile, insieme di classi in Clash
                 //Altrimenti NULL
@@ -80,13 +82,12 @@ public class Tableaux {
         individuals.add(x);
 
         //AND
-        if(concept!=null){
-            x.addConcept(concept);
-            if(parser.isIntersection(concept)) {
-                x.addConcepts(parser.unpackIntersection(concept));
-            }
+        for(OWLClassExpression ce:x.ands) {
+            //Marco l'OR come visitato
+            if (x.isVisited(ce)) break;
+            x.markAsVisited(ce);
+            x.addConcepts(parser.unpackIntersection(ce));
         }
-
         //OR
         for(OWLClassExpression ce:x.ors){
             //Marco l'OR come visitato
@@ -97,7 +98,8 @@ public class Tableaux {
             Set<OWLClass> clashes=null;
             for(OWLClassExpression disjoint:disjoints){
                 //Vedo se il disgiuto selezionato ha un CLASH
-                clashes=computeTableaux(x, disjoint);
+                x.addConcept(disjoint);
+                clashes=computeTableaux(x);
 
                 //Se è clash free, esco da loop
                 if (clashes==null || clashes.isEmpty()) break;
@@ -146,7 +148,7 @@ public class Tableaux {
 
         //CLASH CHECK sui nuovi individui y
         for(Individual y:x.individualsConnected){
-            Set<OWLClass> clashes=computeTableaux(y, null);
+            Set<OWLClass> clashes=computeTableaux(y);
             if (clashes==null || clashes.isEmpty()) break;
             else return clashes;
         }

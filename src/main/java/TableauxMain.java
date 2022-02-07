@@ -28,7 +28,7 @@ public class TableauxMain {
                 Class: ALC:D
                 ObjectProperty: ALC:R
                 Class: ALC:Concept
-                   EquivalentTo: (ALC:R some (ALC:A or ALC:B)) and ALC:A and ALC:B and not(ALC:A) and not(ALC:B)""";
+                   EquivalentTo: (ALC:R some (ALC:A and ALC:B)) and (ALC:R only (ALC:A or ALC:C))""";
         MyOWLParser parser=new MyOWLParser();
         try {
             OWLOntology concept = parser.loadOntologyFromString(conceptOntology);

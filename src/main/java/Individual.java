@@ -5,7 +5,7 @@ import java.util.*;
 
 public class Individual {
     public int id;
-    public HashSet<OWLClassExpression> ors, exists, foreachs, visited;
+    public HashSet<OWLClassExpression> ands, ors, exists, foreachs, visited;
     public ArrayList<OWLClassExpression> label;
     public HashMap<OWLObjectPropertyExpression, HashSet<Individual>> arches;
     public HashSet<Individual> individualsConnected;
@@ -19,6 +19,7 @@ public class Individual {
         parser=new MyOWLParser();
 
         label=new ArrayList<>();
+        ands=new HashSet<>();
         ors=new HashSet<>();
         exists=new HashSet<>();
         foreachs=new HashSet<>();
@@ -27,7 +28,9 @@ public class Individual {
     }
     public void addConcept(OWLClassExpression ce){
         if(!label.contains(ce)){
-            if (parser.isUnion(ce))
+            if (parser.isIntersection(ce))
+                ands.add(ce);
+            else if (parser.isUnion(ce))
                 ors.add(ce);
             else if (parser.isExists(ce))
                 exists.add(ce);
