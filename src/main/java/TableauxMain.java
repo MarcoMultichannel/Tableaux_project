@@ -33,7 +33,7 @@ public class TableauxMain {
         try {
             OWLOntology concept = parser.loadOntologyFromString(conceptOntology);
             OWLOntology terminology = parser.loadOntologyFromFile(terminologyPath);
-            Tableaux tab=new Tableaux(concept,terminology);
+            Tableaux tab=new Tableaux(parser, concept, terminology);
             System.out.println("Concetto in input: "+tab.getConcept());
             float timeElapsed=tab.execute();
             System.out.println("Tempo impiegato: "+timeElapsed+"ms");

@@ -5,10 +5,12 @@ import org.semanticweb.owlapi.model.parameters.Imports;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MyOWLParser {
-    final OWLOntologyManager manager;
+    private final OWLOntologyManager manager;
     public MyOWLParser(){
         this.manager=OWLManager.createOWLOntologyManager();
     }
@@ -18,6 +20,13 @@ public class MyOWLParser {
     public OWLOntology loadOntologyFromString(String document) throws OWLOntologyCreationException {
         StringDocumentSource ontologyString=new StringDocumentSource(document);
         return manager.loadOntologyFromOntologyDocument(ontologyString);
+    }
+    public Map<String, String> getPrefixMap(OWLOntology ontology){
+        OWLDocumentFormat format = manager.getOntologyFormat(ontology);
+        Map<String, String> map = new HashMap<>();
+        if (format!=null && format.isPrefixOWLDocumentFormat())
+            map = format.asPrefixOWLDocumentFormat().getPrefixName2PrefixMap();
+        return map;
     }
     public List<OWLEquivalentClassesAxiom> getEquivalentClassesAxioms(OWLOntology ont){
         return new ArrayList<>(ont.getAxioms(AxiomType.EQUIVALENT_CLASSES,Imports.EXCLUDED));

@@ -14,19 +14,21 @@ import java.util.*;
 import static guru.nidi.graphviz.model.Factory.*;
 
 public class Tableaux {
-    private static final String ALC_NAMESPACE="urn://alc/";
     private static final String TAB_NAMESPACE="urn://talbeaux_project#";
+    private static final String ALC_NAMESPACE="urn://alc/";
     private static final String CONCEPT_NAME="<"+ALC_NAMESPACE+"Concept>";
+    private final Map<String, String> prefix_nsMap;
     private final OWLClassExpression concept;
     private OWLOntology terminology;
     private final MyOWLParser parser;
     private HashSet<Individual> individuals;
     private Model model;
     private Set<OWLClass> clashes;
-    public Tableaux(OWLOntology C) throws OWLException {
-        //TODO supporta tutti i prefissi in C automaticamente
+    public Tableaux(MyOWLParser parser, OWLOntology C) throws OWLException {
+        this.parser=parser;
+        //Carico i prefissi del namespace
+        prefix_nsMap=parser.getPrefixMap(C);
         //Carico il concetto C
-        this.parser=new MyOWLParser();
         List<OWLEquivalentClassesAxiom> axioms=parser.getEquivalentClassesAxioms(C);
         if(axioms.isEmpty())
             //Se l'ontologia del concetto C non è del tipo C equivalente <concept>
@@ -35,15 +37,16 @@ public class Tableaux {
             List<OWLClassExpression> classExpressions=parser.unpackEquilvalentClassesAxiom(axioms.get(0));
             OWLClassExpression left=classExpressions.get(0);
             OWLClassExpression right=classExpressions.get(1);
-            if(left.toString().equals(CONCEPT_NAME))
+            if(left.toString().equals(CONCEPT_NAME)) {
                 //Trasformiamo in forma NNF
-                concept=right.getNNF();
+                concept = right.getNNF();
+            }
             else
                 throw new OWLException("Errore nel concetto C");
         }
     }
-    public Tableaux(OWLOntology C, OWLOntology T) throws OWLException {
-        this(C);
+    public Tableaux(MyOWLParser parser, OWLOntology C, OWLOntology T) throws OWLException {
+        this(parser, C);
         this.terminology=T;
         //TODO parsing della terminologia
     }
@@ -65,10 +68,10 @@ public class Tableaux {
         return timeElapsed;
     }
     public String getConcept() throws OWLException {
-        return formatClassExpression(concept);
+        return replaceNSwithPrefixes(formatClassExpression(concept));
     }
     public String getClashes() throws OWLException {
-        return formatClashes(clashes);
+        return replaceNSwithPrefixes(formatClashes(clashes));
     }
 
     public boolean isClashFree(){
@@ -195,7 +198,9 @@ public class Tableaux {
             }
         }
         model.setNsPrefix( "tab", TAB_NAMESPACE );
-        model.setNsPrefix( "alc", ALC_NAMESPACE );
+        for(String prefix:prefix_nsMap.keySet()) {
+            model.setNsPrefix(prefix.split(":")[0], prefix_nsMap.get(prefix));
+        }
     }
     public void save(String path) throws OWLException, IOException {
         Writer f = new FileWriter(path);
@@ -228,7 +233,7 @@ public class Tableaux {
             if(i!=label.size()-1)
                 result.append(", ");
         }
-        return result.toString();
+        return replaceNSwithPrefixes(result.toString());
     }
     private String formatClashes(Set<OWLClass> clashes) {
         StringBuilder result= new StringBuilder();
@@ -306,6 +311,11 @@ public class Tableaux {
     }
     private String formatAtomicClass(OWLClassExpression ce){
         return ce.toString().replaceAll("[<>]", "");
+    }
+    private String replaceNSwithPrefixes(String string){
+        for(String prefix:prefix_nsMap.keySet())
+            string=string.replaceAll(prefix_nsMap.get(prefix), prefix);
+        return string;
     }
     private String htmlEncode(final String string) {
         String result=string;
