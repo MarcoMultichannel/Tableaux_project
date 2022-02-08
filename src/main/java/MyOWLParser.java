@@ -1,3 +1,4 @@
+import org.jetbrains.annotations.NotNull;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.io.StringDocumentSource;
 import org.semanticweb.owlapi.model.*;
@@ -28,19 +29,19 @@ public class MyOWLParser {
             map = format.asPrefixOWLDocumentFormat().getPrefixName2PrefixMap();
         return map;
     }
-    public List<OWLEquivalentClassesAxiom> getEquivalentClassesAxioms(OWLOntology ont){
+    public List<OWLEquivalentClassesAxiom> getEquivalentClassesAxioms(@NotNull OWLOntology ont){
         return new ArrayList<>(ont.getAxioms(AxiomType.EQUIVALENT_CLASSES,Imports.EXCLUDED));
     }
-    public List<OWLSubClassOfAxiom> getSubClassAxioms(OWLOntology ont){
+    public List<OWLSubClassOfAxiom> getSubClassAxioms(@NotNull OWLOntology ont){
         return new ArrayList<>(ont.getAxioms(AxiomType.SUBCLASS_OF,Imports.EXCLUDED));
     }
-    public List<OWLClassExpression> unpackEquilvalentClassesAxiom(OWLEquivalentClassesAxiom axiom) throws OWLException {
+    public List<OWLClassExpression> unpackEquilvalentClassesAxiom(@NotNull OWLEquivalentClassesAxiom axiom) throws OWLException {
         if(axiom.getAxiomType()!=AxiomType.EQUIVALENT_CLASSES){
             throw new OWLException("Not EQUIVALENT_CLASSES");
         }
         return new ArrayList<>(axiom.getClassExpressions());
     }
-    public List<OWLClassExpression> unpackSubClassAxioms(OWLSubClassOfAxiom axiom) throws OWLException {
+    public List<OWLClassExpression> unpackSubClassAxioms(@NotNull OWLSubClassOfAxiom axiom) throws OWLException {
         if(axiom.getAxiomType()!=AxiomType.SUBCLASS_OF){
             throw new OWLException("Not SUBCLASS_OF");
         }
@@ -49,7 +50,7 @@ public class MyOWLParser {
         array.add(axiom.getSuperClass());
         return array;
     }
-    public List<OWLClassExpression> unpackIntersection(OWLClassExpression and) throws OWLException {
+    public List<OWLClassExpression> unpackIntersection(@NotNull OWLClassExpression and) throws OWLException {
         if(and.getClassExpressionType()!= ClassExpressionType.OBJECT_INTERSECTION_OF){
             throw new OWLException("Not an OBJECT_INTERSECTION_OF");
         }
@@ -61,7 +62,7 @@ public class MyOWLParser {
                 resultList.add(ce);
         return resultList;
     }
-    public List<OWLClassExpression> unpackUnion(OWLClassExpression or) throws OWLException {
+    public List<OWLClassExpression> unpackUnion(@NotNull OWLClassExpression or) throws OWLException {
         if(or.getClassExpressionType()!= ClassExpressionType.OBJECT_UNION_OF){
             throw new OWLException("Not an OBJECT_UNION_OF");
         }
@@ -73,7 +74,7 @@ public class MyOWLParser {
                 resultList.add(ce);
         return resultList;
     }
-    public OWLClassExpression unpackNegation(OWLClassExpression not) throws OWLException {
+    public OWLClassExpression unpackNegation(@NotNull OWLClassExpression not) throws OWLException {
         if(not.getClassExpressionType()!= ClassExpressionType.OBJECT_COMPLEMENT_OF){
             throw new OWLException("Not an OBJECT_UNION_OF");
         }
@@ -105,28 +106,28 @@ public class MyOWLParser {
     }
 
 //isSomething methods
-    public boolean isIntersection(OWLClassExpression ce){
+    public boolean isIntersection(@NotNull OWLClassExpression ce){
         return ce.getClassExpressionType() == ClassExpressionType.OBJECT_INTERSECTION_OF;
     }
-    public boolean isUnion(OWLClassExpression ce){
+    public boolean isUnion(@NotNull OWLClassExpression ce){
         return ce.getClassExpressionType() == ClassExpressionType.OBJECT_UNION_OF;
     }
-    public boolean isExists(OWLClassExpression ce){
+    public boolean isExists(@NotNull OWLClassExpression ce){
         return ce.getClassExpressionType() == ClassExpressionType.OBJECT_SOME_VALUES_FROM;
     }
-    public boolean isForeach(OWLClassExpression ce){
+    public boolean isForeach(@NotNull OWLClassExpression ce){
         return ce.getClassExpressionType() == ClassExpressionType.OBJECT_ALL_VALUES_FROM;
     }
-    public boolean isNegation(OWLClassExpression ce){
+    public boolean isNegation(@NotNull OWLClassExpression ce){
         return ce.getClassExpressionType() == ClassExpressionType.OBJECT_COMPLEMENT_OF;
     }
-    public boolean isClass(OWLClassExpression ce){
+    public boolean isClass(@NotNull OWLClassExpression ce){
         return ce.isOWLClass();
     }
-    public boolean isTop(OWLClassExpression ce){
+    public boolean isTop(@NotNull OWLClassExpression ce){
         return ce.isOWLThing();
     }
-    public boolean isBottom(OWLClassExpression ce){
+    public boolean isBottom(@NotNull OWLClassExpression ce){
         return ce.isOWLNothing();
     }
 }

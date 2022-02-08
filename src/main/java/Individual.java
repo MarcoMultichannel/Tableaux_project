@@ -1,3 +1,4 @@
+import org.jetbrains.annotations.NotNull;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
 
@@ -11,7 +12,7 @@ public class Individual {
     public HashSet<Individual> individualsConnected;
     public ArrayList<ArrayList<OWLClassExpression>> previousLabels;
     public static int numIndividuals=0;
-
+    public boolean blocked;
     private final MyOWLParser parser;
     public Individual(){
         this.id=numIndividuals;
@@ -29,7 +30,7 @@ public class Individual {
         previousLabels=new ArrayList<>();
         label=new ArrayList<>();
     }
-    public Individual(Individual x){
+    public Individual(@NotNull Individual x){
         this.id=x.id;
         this.arches=new HashMap<>(x.arches);
         this.parser=new MyOWLParser();
@@ -40,8 +41,18 @@ public class Individual {
         this.foreaches=new LinkedList<>(x.foreaches);
         this.individualsConnected=new HashSet<>(x.individualsConnected);
         this.previousLabels=new ArrayList<>(x.previousLabels);
+        this.blocked=x.blocked;
+    }
+    public boolean equals(Object ogg) {
+        if(ogg instanceof Individual){
+            return ((Individual) ogg).id==this.id;
+        }else return false;
+    }
+    public static void setNextID(int id){
+        Individual.numIndividuals=id;
     }
     public void addConcept(OWLClassExpression ce){
+        if(ce==null) return;
         if(!label.contains(ce)){
             if (parser.isIntersection(ce))
                 ands.add(ce);
@@ -54,7 +65,7 @@ public class Individual {
             label.add(ce);
         }
     }
-    public void addConcepts(Collection<OWLClassExpression> ce_list){
+    public void addConcepts(@NotNull Collection<OWLClassExpression> ce_list){
         for(OWLClassExpression ce:ce_list)
             addConcept(ce);
     }
@@ -72,5 +83,20 @@ public class Individual {
             individuals.add(y);
             this.arches.put(role,individuals);
         }
+    }
+
+    public boolean isBlocked(@NotNull HashSet<Individual> individuals) {
+        //TODO trova un modo più furbo per il blocking
+        boolean result=false;
+        for(Individual x:individuals){
+            if(this.id>x.id && x.label.containsAll(this.label)) {
+                result = true;
+                break;
+            }
+        }
+        return result;
+    }
+    public void markAsBlocked(){
+        blocked=true;
     }
 }

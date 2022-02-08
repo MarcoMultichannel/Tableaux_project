@@ -28,7 +28,7 @@ public class TableauxMain {
                 Class: ALC:D
                 ObjectProperty: ALC:R
                 Class: ALC:Concept
-                   EquivalentTo: ALC:A and ((not(ALC:A) and ALC:R some ALC:B) or (ALC:R some ALC:C)) and ((ALC:R only ALC:B) or (ALC:R only (not(ALC:A))))""";
+                   EquivalentTo: ALC:A and ALC:B and (ALC:R some (not(ALC:A)))""";
         MyOWLParser parser=new MyOWLParser();
         try {
             OWLOntology concept = parser.loadOntologyFromString(conceptOntology);
@@ -40,8 +40,11 @@ public class TableauxMain {
 
             if(tab.isClashFree())
                 System.out.println("Il concetto C è soddisfacibile");
-            else
+            else {
                 System.out.println("Il concetto C è insoddisfacibile");
+
+                System.out.println("Clash: "+tab.getClashes());
+            }
 
             tab.save("result.rdf");
             BufferedImage img=tab.toImage(false);

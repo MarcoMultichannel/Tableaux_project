@@ -10,7 +10,11 @@ import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.semanticweb.owlapi.model.*;
+import uk.ac.manchester.cs.owl.owlapi.*;
 
 import java.awt.image.BufferedImage;
 import java.io.FileWriter;
@@ -26,12 +30,13 @@ public class Tableaux {
     private static final String CONCEPT_NAME="<"+ALC_NAMESPACE+"Concept>";
     private final Map<String, String> prefix_nsMap;
     private final OWLClassExpression concept;
-    private OWLOntology terminology;
+    private OWLClassExpression concept_Tbox;
+    private List<OWLSubClassOfAxiom> Tbox_unfoldable;
     private final MyOWLParser parser;
     private HashSet<Individual> individuals;
     private Model model;
     private Set<OWLClass> clashes;
-    public Tableaux(MyOWLParser parser, OWLOntology C) throws OWLException {
+    public Tableaux(@NotNull MyOWLParser parser, OWLOntology C) throws OWLException {
         this.parser=parser;
         //Carico i prefissi del namespace
         prefix_nsMap=parser.getPrefixMap(C);
@@ -54,8 +59,35 @@ public class Tableaux {
     }
     public Tableaux(MyOWLParser parser, OWLOntology C, OWLOntology T) throws OWLException {
         this(parser, C);
-        this.terminology=T;
-        //TODO parsing della terminologia
+        List<OWLSubClassOfAxiom> subclassAxioms=parser.getSubClassAxioms(T);
+        Tbox_unfoldable=getUnfoldableComponent(subclassAxioms);
+        subclassAxioms.removeAll(Tbox_unfoldable);
+        for(OWLEquivalentClassesAxiom eqAxiom:parser.getEquivalentClassesAxioms(T)) {
+            List<OWLClassExpression> classes=parser.unpackEquilvalentClassesAxiom(eqAxiom);
+            subclassAxioms.add(new OWLSubClassOfAxiomImpl(classes.get(0), classes.get(1), new HashSet<>()));
+            subclassAxioms.add(new OWLSubClassOfAxiomImpl(classes.get(1), classes.get(0), new HashSet<>()));
+        }
+        concept_Tbox=getTboxConcept(subclassAxioms);
+    }
+
+    private @Nullable OWLClassExpression getTboxConcept(@NotNull List<OWLSubClassOfAxiom> subclassAxioms) throws OWLException {
+        ArrayList<OWLClassExpression> operands=new ArrayList<>();
+        for(OWLSubClassOfAxiom axiom:subclassAxioms){
+            List<OWLClassExpression> ce=parser.unpackSubClassAxioms(axiom);
+            OWLClassExpression subclass=ce.get(0);
+            OWLClassExpression superclass=ce.get(1);
+            ArrayList<OWLClassExpression> disjoints=new ArrayList<>();
+            disjoints.add(new OWLObjectComplementOfImpl(subclass));
+            disjoints.add(superclass);
+            operands.add(new OWLObjectUnionOfImpl(disjoints));
+        }
+        if(operands.isEmpty()) return null;
+        else return new OWLObjectIntersectionOfImpl(operands);
+    }
+    private @NotNull List<OWLSubClassOfAxiom> getUnfoldableComponent(List<OWLSubClassOfAxiom> subClassOfAxioms){
+        List<OWLSubClassOfAxiom> result=new ArrayList<>();
+        //TODO prendi componente unfoldable
+        return result;
     }
     public float execute(){
         individuals=new HashSet<>();
@@ -64,6 +96,7 @@ public class Tableaux {
             long start = System.nanoTime();
             Individual x=new Individual();
             x.addConcept(concept);
+            x.addConcept(concept_Tbox);
             clashes=computeTableaux(x);
             long finish = System.nanoTime();
             timeElapsed=(finish - start)/1000000f;
@@ -75,26 +108,37 @@ public class Tableaux {
         return timeElapsed;
     }
     public String getConcept() throws OWLException {
-        return replaceNSwithPrefixes(formatClassExpression(concept));
+        return replaceNSwithPrefixes(formatClassExpression(concept))+", "+replaceNSwithPrefixes(formatClassExpression(concept_Tbox));
     }
 
     public boolean isClashFree(){
-        return (clashes==null || clashes.isEmpty());
+        return (clashes.isEmpty());
     }
+
+    public String getClashes(){return formatClashes(clashes);}
     private Set<OWLClass> computeTableaux(Individual x) throws OWLException {
         //INPUT: individuo e concetto da aggiungere
         //OUTPUT: Se insoddisfacibile, insieme di classi in Clash
                 //Altrimenti NULL
         individuals.add(x);
+        Set<OWLClass> clashes=new HashSet<>();
+
+        clashes=unfoldableExpantionRules(x);
+        if(!clashes.isEmpty()) return clashes;
+
         //AND
         while (!x.ands.isEmpty()) {
             x.addConcepts(parser.unpackIntersection(x.ands.remove()));
         }
+        if(x.isBlocked(individuals)){
+            x.markAsBlocked();
+            return clashes;
+        }
         //OR
         while (!x.ors.isEmpty()) {
-            List<OWLClassExpression> disjoints = parser.unpackUnion(x.ors.remove());
-            Set<OWLClass> clashes=null;
-            for(OWLClassExpression disjoint:disjoints){
+            Queue<OWLClassExpression> disjoints = new LinkedList<>(parser.unpackUnion(x.ors.remove()));
+            while(!disjoints.isEmpty()){
+                OWLClassExpression disjoint=disjoints.remove();
                 //Mi salvo lo stato corrente per fare backtracking nel caso il disgiunto non va bene
                 Individual old_x=new Individual(x);
                 HashSet<Individual> old_individuals=new HashSet<>(individuals);
@@ -104,20 +148,21 @@ public class Tableaux {
                 clashes=computeTableaux(x);
 
                 //Se è clash free, esco da loop
-                if (clashes==null || clashes.isEmpty()) break;
+                if (clashes.isEmpty()) break;
 
                 //Altrimenti faccio backtracking
-                else
-                {
+                else if (!disjoints.isEmpty()){
                     individuals=old_individuals;
                     individuals.remove(x);
+                    individuals.add(old_x);
                     ArrayList<OWLClassExpression> clashLabel=x.label;
                     x=old_x;
                     x.addClashLabel(clashLabel);
+                    Individual.setNextID(x.id+1);
                 }
             }
             //Se ha trovato un clash provando tutti i disgiunti restituisce l'ultimo clash
-            if (clashes!=null && !clashes.isEmpty()) return clashes;
+            if (!clashes.isEmpty()) return clashes;
         }
 
         //CLASH CHECK
@@ -138,6 +183,7 @@ public class Tableaux {
             //Altrimenti ne creo un nuovo
             if (y==null) {
                 y = new Individual();
+                y.addConcept(concept_Tbox);
                 newArches.put(role, y);
             }
             //Aggiungo il concetto al nuovo individuo e aggiungo l'arco R(x,y)
@@ -158,13 +204,20 @@ public class Tableaux {
 
         //CLASH CHECK sui nuovi individui y
         for(Individual y:x.individualsConnected){
-            Set<OWLClass> clashes=computeTableaux(y);
-            if (clashes==null || clashes.isEmpty()) break;
+            clashes=computeTableaux(y);
+            if (clashes.isEmpty()) break;
             else return clashes;
         }
-        return null;
+        return clashes;
     }
-    private Set<OWLClass> getClashes(Individual x) throws OWLException {
+
+    private @NotNull Set<OWLClass> unfoldableExpantionRules(Individual x) {
+        Set<OWLClass> clashes=new HashSet<>();
+        //TODO applica le regole di espansione del lazy unfolding
+        return clashes;
+    }
+
+    private @NotNull Set<OWLClass> getClashes(@NotNull Individual x) throws OWLException {
         HashSet<OWLClass> atomicClasses=new HashSet<>();
         HashSet<OWLClass> clashClasses=new HashSet<>();
         for(OWLClassExpression ce:x.label){
@@ -204,6 +257,9 @@ public class Tableaux {
             Property clash=model.createProperty( TAB_NAMESPACE + "CLASH" );
             Property hasLabel=model.createProperty( TAB_NAMESPACE + "L" );
             Property disjointLabel=model.createProperty( TAB_NAMESPACE + "OR" );
+            Property blockedLabel=model.createProperty( TAB_NAMESPACE + "BLOCKED" );
+            if(i.blocked)
+                individualResource.addLiteral(blockedLabel, "Yes");
             if(getClashes(i).isEmpty())
                 individualResource.addLiteral(hasLabel, formatLabel(i.label));
             else {
@@ -250,7 +306,7 @@ public class Tableaux {
         }
         return Graphviz.fromGraph(g).scale(1.4).render(Format.SVG).toImage();
     }
-    private String formatLabel(List<OWLClassExpression> label) throws OWLException {
+    private String formatLabel(@NotNull List<OWLClassExpression> label) throws OWLException {
         StringBuilder result= new StringBuilder();
         for(int i=0;i<label.size();i++) {
             result.append(formatClassExpression(label.get(i)));
@@ -259,7 +315,7 @@ public class Tableaux {
         }
         return replaceNSwithPrefixes(result.toString());
     }
-    private String formatClashes(Set<OWLClass> clashes) {
+    private @NotNull String formatClashes(@NotNull Set<OWLClass> clashes) {
         StringBuilder result= new StringBuilder();
         Iterator<OWLClass> clashes_iterator=clashes.iterator();
         for(int i=0;i<clashes.size();i++){
@@ -277,7 +333,7 @@ public class Tableaux {
         }
         return result.toString();
     }
-    private String formatClassExpression(OWLClassExpression ce) throws OWLException {
+    private @NotNull String formatClassExpression(OWLClassExpression ce) throws OWLException {
         StringBuilder result= new StringBuilder();
         if (parser.isTop(ce))
             result.append("⊤");
@@ -356,10 +412,10 @@ public class Tableaux {
         }
         return result.toString();
     }
-    private String formatRole(OWLObjectPropertyExpression role){
+    private @NotNull String formatRole(@NotNull OWLObjectPropertyExpression role){
         return role.toString().replaceAll("[<>]", "");
     }
-    private String formatAtomicClass(OWLClassExpression ce){
+    private @NotNull String formatAtomicClass(@NotNull OWLClassExpression ce){
         return ce.toString().replaceAll("[<>]", "");
     }
     private String replaceNSwithPrefixes(String string){
@@ -367,7 +423,7 @@ public class Tableaux {
             string=string.replaceAll(prefix_nsMap.get(prefix), prefix);
         return string;
     }
-    private String htmlEncode(final String string) {
+    private String htmlEncode(final @NotNull String string) {
         String result=string;
         for (int i = 0; i < string.length(); i++) {
             result=result.replace("⊤","&#x22a4;");

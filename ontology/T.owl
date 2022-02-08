@@ -1,13 +1,7 @@
-Prefix: ex: <http://example.org/>
-Ontology: <https://github.com/MarcoMultichannel/Tableaux_project/TBox>
+Prefix: ALC: <urn://alc/>
 
-Class: ex:A
-Class: ex:B
-Class: ex:C
-Class: ex:D
+Class: ALC:A
+ObjectProperty: ALC:R
 
-Class: ex:D
-   SubClassOf: ex:C
-
-Class: ex:B
-   SubClassOf: ex:A
+Class: ALC:A
+   SubClassOf: ALC:R some ALC:A
