@@ -1,8 +1,13 @@
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+
 import org.jetbrains.annotations.NotNull;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLObjectPropertyExpression;
-
-import java.util.*;
 
 public class Individual {
     public int id;
@@ -30,22 +35,22 @@ public class Individual {
         previousLabels=new ArrayList<>();
         label=new ArrayList<>();
     }
-    public Individual(@NotNull Individual x){
-        this.id=x.id;
-        this.arches=new HashMap<>(x.arches);
+    public Individual(@NotNull Individual individual){
+        this.id=individual.id;
+        this.arches=new HashMap<>(individual.arches);
         this.parser=new MyOWLParser();
-        this.label=new ArrayList<>(x.label);
-        this.ands=new LinkedList<>(x.ands);
-        this.ors=new LinkedList<>(x.ors);
-        this.exists=new LinkedList<>(x.exists);
-        this.foreaches=new LinkedList<>(x.foreaches);
-        this.individualsConnected=new HashSet<>(x.individualsConnected);
-        this.previousLabels=new ArrayList<>(x.previousLabels);
-        this.blocked=x.blocked;
+        this.label=new ArrayList<>(individual.label);
+        this.ands=new LinkedList<>(individual.ands);
+        this.ors=new LinkedList<>(individual.ors);
+        this.exists=new LinkedList<>(individual.exists);
+        this.foreaches=new LinkedList<>(individual.foreaches);
+        this.individualsConnected=new HashSet<>(individual.individualsConnected);
+        this.previousLabels=new ArrayList<>(individual.previousLabels);
+        this.blocked=individual.blocked;
     }
-    public boolean equals(Object ogg) {
-        if(ogg instanceof Individual){
-            return ((Individual) ogg).id==this.id;
+    public boolean equals(Object obj) {
+        if(obj instanceof Individual){
+            return ((Individual) obj).id==this.id;
         }else return false;
     }
     public static void setNextID(int id){
@@ -72,29 +77,29 @@ public class Individual {
     public void addClashLabel(ArrayList<OWLClassExpression> label){
         previousLabels.add(new ArrayList<>(label));
     }
-    public void newArchTo(OWLObjectPropertyExpression role, Individual y){
-        this.individualsConnected.add(y);
+    public void newArchTo(OWLObjectPropertyExpression role, Individual individual){
+        this.individualsConnected.add(individual);
         if(this.arches.containsKey(role)){
             HashSet<Individual> individuals=this.arches.get(role);
-            individuals.add(y);
+            individuals.add(individual);
         }
         else{
             HashSet<Individual> individuals=new HashSet<>();
-            individuals.add(y);
+            individuals.add(individual);
             this.arches.put(role,individuals);
         }
     }
 
     public boolean isBlocked(@NotNull HashSet<Individual> individuals) {
         //TODO trova un modo più furbo per il blocking
-        boolean result=false;
-        for(Individual x:individuals){
-            if(this.id>x.id && x.label.containsAll(this.label)) {
-                result = true;
+        boolean isBlocked=false;
+        for(Individual individual:individuals){
+            if(this.id>individual.id && individual.label.containsAll(this.label)) {
+                isBlocked = true;
                 break;
             }
         }
-        return result;
+        return isBlocked;
     }
     public void markAsBlocked(){
         blocked=true;

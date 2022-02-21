@@ -94,10 +94,10 @@ public class Tableaux {
         float timeElapsed=0;
         try {
             long start = System.nanoTime();
-            Individual x=new Individual();
-            x.addConcept(concept);
-            x.addConcept(concept_Tbox);
-            clashes=computeTableaux(x);
+            Individual individual=new Individual();
+            individual.addConcept(concept);
+            individual.addConcept(concept_Tbox);
+            clashes=computeTableaux(individual);
             long finish = System.nanoTime();
             timeElapsed=(finish - start)/1000000f;
             createRDFmodel();
@@ -116,49 +116,49 @@ public class Tableaux {
     }
 
     public String getClashes(){return formatClashes(clashes);}
-    private Set<OWLClass> computeTableaux(Individual x) throws OWLException {
+    private Set<OWLClass> computeTableaux(Individual individual) throws OWLException {
         //INPUT: individuo e concetto da aggiungere
         //OUTPUT: Se insoddisfacibile, insieme di classi in Clash
                 //Altrimenti NULL
-        individuals.add(x);
+        individuals.add(individual);
         Set<OWLClass> clashes=new HashSet<>();
 
-        clashes=unfoldableExpantionRules(x);
+        clashes=unfoldableExpantionRules(individual);
         if(!clashes.isEmpty()) return clashes;
 
         //AND
-        while (!x.ands.isEmpty()) {
-            x.addConcepts(parser.unpackIntersection(x.ands.remove()));
+        while (!individual.ands.isEmpty()) {
+            individual.addConcepts(parser.unpackIntersection(individual.ands.remove()));
         }
-        if(x.isBlocked(individuals)){
-            x.markAsBlocked();
+        if(individual.isBlocked(individuals)){
+            individual.markAsBlocked();
             return clashes;
         }
         //OR
-        while (!x.ors.isEmpty()) {
-            Queue<OWLClassExpression> disjoints = new LinkedList<>(parser.unpackUnion(x.ors.remove()));
+        while (!individual.ors.isEmpty()) {
+            Queue<OWLClassExpression> disjoints = new LinkedList<>(parser.unpackUnion(individual.ors.remove()));
             while(!disjoints.isEmpty()){
                 OWLClassExpression disjoint=disjoints.remove();
                 //Mi salvo lo stato corrente per fare backtracking nel caso il disgiunto non va bene
-                Individual old_x=new Individual(x);
-                HashSet<Individual> old_individuals=new HashSet<>(individuals);
+                Individual oldIndividual=new Individual(individual);
+                HashSet<Individual> oldIndividuals=new HashSet<>(individuals);
 
                 //Vedo se il disgiuto selezionato ha un CLASH
-                x.addConcept(disjoint);
-                clashes=computeTableaux(x);
+                individual.addConcept(disjoint);
+                clashes=computeTableaux(individual);
 
                 //Se è clash free, esco da loop
                 if (clashes.isEmpty()) break;
 
                 //Altrimenti faccio backtracking
                 else if (!disjoints.isEmpty()){
-                    individuals=old_individuals;
-                    individuals.remove(x);
-                    individuals.add(old_x);
-                    ArrayList<OWLClassExpression> clashLabel=x.label;
-                    x=old_x;
-                    x.addClashLabel(clashLabel);
-                    Individual.setNextID(x.id+1);
+                    individuals=oldIndividuals;
+                    individuals.remove(individual);
+                    individuals.add(oldIndividual);
+                    ArrayList<OWLClassExpression> clashLabel=individual.label;
+                    individual=oldIndividual;
+                    individual.addClashLabel(clashLabel);
+                    Individual.setNextID(individual.id+1);
                 }
             }
             //Se ha trovato un clash provando tutti i disgiunti restituisce l'ultimo clash
@@ -166,61 +166,60 @@ public class Tableaux {
         }
 
         //CLASH CHECK
-        if(!getClashes(x).isEmpty()) return getClashes(x);
+        if(!getClashes(individual).isEmpty()) return getClashes(individual);
 
         //Creo una mappa per utilizzare un solo individuo per ogni ruolo
         HashMap<OWLObjectPropertyExpression, Individual> newArches=new HashMap<>();
 
-        while(!x.exists.isEmpty()){
-            OWLClassExpression ce=x.exists.remove();
+        while(!individual.exists.isEmpty()){
+            OWLClassExpression ce=individual.exists.remove();
             //Estraggo il ruolo ed il concetto dall'esiste
             OWLObjectPropertyExpression role = parser.getExistRole(ce);
             OWLClassExpression classExpression = parser.getExistClassExpression(ce);
 
             //Se già c'è un individuo con quel ruolo uso quello
-            Individual y=newArches.get(role);
-
+            Individual existingIndividual=newArches.get(role);
             //Altrimenti ne creo un nuovo
-            if (y==null) {
-                y = new Individual();
-                y.addConcept(concept_Tbox);
-                newArches.put(role, y);
+            if (existingIndividual==null) {
+                existingIndividual = new Individual();
+                existingIndividual.addConcept(concept_Tbox);
+                newArches.put(role, existingIndividual);
             }
             //Aggiungo il concetto al nuovo individuo e aggiungo l'arco R(x,y)
-            y.addConcept(classExpression);
-            x.newArchTo(role,y);
+            existingIndividual.addConcept(classExpression);
+            individual.newArchTo(role,existingIndividual);
         }
 
         //PerOgni
-        while(!x.foreaches.isEmpty()){
-            OWLClassExpression ce=x.foreaches.remove();
+        while(!individual.foreaches.isEmpty()){
+            OWLClassExpression ce=individual.foreaches.remove();
             //Estraggo il ruolo ed il concetto dal per ogni
             OWLObjectPropertyExpression role=parser.getForeachRole(ce);
             OWLClassExpression classExpression=parser.getForeachClassExpression(ce);
             //per ogni z tale che R(x,z) aggiungo il concetto
-            for(Individual z:x.arches.get(role))
-                z.addConcept(classExpression);
+            for(Individual singleIndividual: individual.arches.get(role))
+                singleIndividual.addConcept(classExpression);
         }
 
         //CLASH CHECK sui nuovi individui y
-        for(Individual y:x.individualsConnected){
-            clashes=computeTableaux(y);
+        for(Individual singleIndividual: individual.individualsConnected){
+            clashes=computeTableaux(singleIndividual);
             if (clashes.isEmpty()) break;
             else return clashes;
         }
         return clashes;
     }
 
-    private @NotNull Set<OWLClass> unfoldableExpantionRules(Individual x) {
+    private @NotNull Set<OWLClass> unfoldableExpantionRules(Individual individual) {
         Set<OWLClass> clashes=new HashSet<>();
         //TODO applica le regole di espansione del lazy unfolding
         return clashes;
     }
 
-    private @NotNull Set<OWLClass> getClashes(@NotNull Individual x) throws OWLException {
+    private @NotNull Set<OWLClass> getClashes(@NotNull Individual individual) throws OWLException {
         HashSet<OWLClass> atomicClasses=new HashSet<>();
         HashSet<OWLClass> clashClasses=new HashSet<>();
-        for(OWLClassExpression ce:x.label){
+        for(OWLClassExpression ce:individual.label){
             if(parser.isBottom(ce)){
                 clashClasses.add((OWLClass)ce);
             }
@@ -229,7 +228,7 @@ public class Tableaux {
                 atomicClasses.add(c);
             }
         }
-        for(OWLClassExpression ce:x.label){
+        for(OWLClassExpression ce:individual.label){
             if(parser.isNegation(ce)){
                 OWLClassExpression c=parser.unpackNegation(ce);
                 if(parser.isClass(c) && atomicClasses.contains(c))
@@ -240,33 +239,33 @@ public class Tableaux {
     }
     private void createRDFmodel() throws OWLException {
         model = ModelFactory.createDefaultModel();
-        for(Individual x:individuals){
-            for(OWLObjectPropertyExpression role:x.arches.keySet()){
+        for(Individual individual:individuals){
+            for(OWLObjectPropertyExpression role:individual.arches.keySet()){
                 String roleURI=formatRole(role);
                 Property hasArch=model.createProperty(roleURI);
-                for(Individual y:x.arches.get(role)) {
-                    Resource x_resource = model.getResource(TAB_NAMESPACE+"x"+x.id);
-                    Resource y_resource = model.getResource(TAB_NAMESPACE+"x"+y.id);
-                    x_resource.addProperty(hasArch, y_resource);
+                for(Individual singleIndividual: individual.arches.get(role)) {
+                    Resource individualResource = model.getResource(TAB_NAMESPACE+"x"+individual.id);
+                    Resource singleIndividualResource = model.getResource(TAB_NAMESPACE+"x"+ singleIndividual.id);
+                    individualResource.addProperty(hasArch, singleIndividualResource);
                 }
             }
         }
-        for(Individual i:individuals){
-            String individualURI = TAB_NAMESPACE+"x"+i.id;
+        for(Individual individual:individuals){
+            String individualURI = TAB_NAMESPACE+"x"+individual.id;
             Resource individualResource = model.createResource(individualURI);
             Property clash=model.createProperty( TAB_NAMESPACE + "CLASH" );
             Property hasLabel=model.createProperty( TAB_NAMESPACE + "L" );
             Property disjointLabel=model.createProperty( TAB_NAMESPACE + "OR" );
             Property blockedLabel=model.createProperty( TAB_NAMESPACE + "BLOCKED" );
-            if(i.blocked)
+            if(individual.blocked)
                 individualResource.addLiteral(blockedLabel, "Yes");
-            if(getClashes(i).isEmpty())
-                individualResource.addLiteral(hasLabel, formatLabel(i.label));
+            if(getClashes(individual).isEmpty())
+                individualResource.addLiteral(hasLabel, formatLabel(individual.label));
             else {
-                individualResource.addLiteral(clash, formatClashes(getClashes(i)));
-                individualResource.addLiteral(hasLabel, formatLabel(i.label) + ", CLASH.");
+                individualResource.addLiteral(clash, formatClashes(getClashes(individual)));
+                individualResource.addLiteral(hasLabel, formatLabel(individual.label) + ", CLASH.");
             }
-            for(ArrayList<OWLClassExpression> oldLabel:i.previousLabels)
+            for(ArrayList<OWLClassExpression> oldLabel:individual.previousLabels)
                 individualResource.addLiteral(disjointLabel, formatLabel(oldLabel)+", CLASH.");
         }
         model.setNsPrefix( "tab", TAB_NAMESPACE );
@@ -315,7 +314,7 @@ public class Tableaux {
         }
         return replaceNSwithPrefixes(result.toString());
     }
-    private @NotNull String formatClashes(@NotNull Set<OWLClass> clashes) {
+private @NotNull String formatClashes(@NotNull Set<OWLClass> clashes) {
         StringBuilder result= new StringBuilder();
         Iterator<OWLClass> clashes_iterator=clashes.iterator();
         for(int i=0;i<clashes.size();i++){
@@ -423,7 +422,7 @@ public class Tableaux {
             string=string.replaceAll(prefix_nsMap.get(prefix), prefix);
         return string;
     }
-    private String htmlEncode(final @NotNull String string) {
+    public String htmlEncode(final @NotNull String string) {
         String result=string;
         for (int i = 0; i < string.length(); i++) {
             result=result.replace("⊤","&#x22a4;");

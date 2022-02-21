@@ -20,7 +20,8 @@ public class TableauxMain {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
     public static void main(String[] args) {
-        String conceptOntology= """
+        String conceptOntology;
+        conceptOntology = """
                 Prefix: ALC: <urn://alc/>
                 Class: ALC:A
                 Class: ALC:B
