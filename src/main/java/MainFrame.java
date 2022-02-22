@@ -214,6 +214,10 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
                     OWLOntology terminologyTemp = parser.loadOntologyFromFile(terminologyPath);
                     if(terminologyTemp.isEmpty()){
                         JOptionPane.showMessageDialog(MainFrame.this, "File Imported is Empty!");
+                        selectedFile = null;
+                        terminologyPath = null;
+                         jLabel4.setVisible(false);
+                         jLabel5.setText("");
                         return;
                     }
                     
