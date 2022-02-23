@@ -37,6 +37,7 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
      */
     public MainFrame() {
         initComponents();
+        this.setLocation(500,250);
         jLabel4.setVisible(false);
         computeTableauxButton.setEnabled(false);
     }
@@ -189,6 +190,7 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
             //BufferedImage img=tableauxReference.toImage(false);
             //showImage(img);
             OutputTableaux outputTableaux = new OutputTableaux(this,timeElapsed);
+            outputTableaux.setLocation(500, 250);
             outputTableaux.setAlwaysOnTop(true);
             outputTableaux.setVisible(true);
             dispose();

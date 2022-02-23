@@ -1,14 +1,25 @@
 
+import com.kitfox.svg.A;
+import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Dialog;
 import java.awt.FlowLayout;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ContainerEvent;
+import java.awt.event.ContainerListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.GroupLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
@@ -28,46 +39,6 @@ public class OutputTableaux extends javax.swing.JFrame {
     private Tableaux tableauxReference;
     private DataByFrame dataInterface;
     private float timeElapsed;
-    
-    
-    public  void showImage(BufferedImage img){
-        JFrame frame = new JFrame("Tableaux");
-        frame.setLayout(new FlowLayout());
-        
-        frame.setLocation(100,100);
-        ImageIcon imgIcon = new ImageIcon(img);
-        frame.add(new JLabel(imgIcon));
-        frame.setSize(imgIcon.getIconWidth()+100, imgIcon.getIconHeight()+150);
-        JButton saveRdfTableaux = new JButton();
-         saveRdfTableaux.setSize(50,30);
-        saveRdfTableaux.setText("Salva Tableaux");
-      /*  saveRdfTableaux.setAlignmentY(imgIcon.getIconHeight()+40);
-        saveRdfTableaux.setAlignmentX(imgIcon.getIconWidth()+40);
-        saveRdfTableaux.setHorizontalAlignment(SwingConstants.RIGHT);*/
-        saveRdfTableaux.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-               this.saveRdfTableauxActionPerformed(evt);
-            }
-
-            private void saveRdfTableauxActionPerformed(ActionEvent evt) {
-                try {
-                    tableauxReference.save("Tableaux.rdf");
-                } catch (OWLException ex) {
-                    Logger.getLogger(OutputTableaux.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (IOException ex) {
-                    Logger.getLogger(OutputTableaux.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-        
-        frame.add(saveRdfTableaux);
-        frame.setAlwaysOnTop(true);
-        frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-    }
-    
-   
-    
     
     private float getTime(){
         return timeElapsed;
@@ -261,13 +232,12 @@ public class OutputTableaux extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void showGraphButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showGraphButtonActionPerformed
-        BufferedImage img;
-        try {
-            img = tableauxReference.toImage(false);
-                showImage(img);
-        } catch (IOException ex) {
-            Logger.getLogger(OutputTableaux.class.getName()).log(Level.SEVERE, null, ex);
-        }
+
+        GraphView output = new GraphView(this,dataInterface);
+        output.setAlwaysOnTop(true);
+        output.setVisible(true);
+        output.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        
     }//GEN-LAST:event_showGraphButtonActionPerformed
 
     private void newConceptButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newConceptButtonActionPerformed
