@@ -1,4 +1,6 @@
 
+import java.awt.CardLayout;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -6,8 +8,10 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.SwingConstants;
 import org.semanticweb.owlapi.model.OWLException;
 
 /*
@@ -26,15 +30,43 @@ public class OutputTableaux extends javax.swing.JFrame {
     private float timeElapsed;
     
     
-    public static void showImage(BufferedImage img){
+    public  void showImage(BufferedImage img){
         JFrame frame = new JFrame("Tableaux");
-        frame.setSize(1500,700);
+        frame.setLayout(new FlowLayout());
+        
         frame.setLocation(100,100);
-        frame.add(new JLabel(new ImageIcon(img)));
+        ImageIcon imgIcon = new ImageIcon(img);
+        frame.add(new JLabel(imgIcon));
+        frame.setSize(imgIcon.getIconWidth()+100, imgIcon.getIconHeight()+150);
+        JButton saveRdfTableaux = new JButton();
+         saveRdfTableaux.setSize(50,30);
+        saveRdfTableaux.setText("Salva Tableaux");
+      /*  saveRdfTableaux.setAlignmentY(imgIcon.getIconHeight()+40);
+        saveRdfTableaux.setAlignmentX(imgIcon.getIconWidth()+40);
+        saveRdfTableaux.setHorizontalAlignment(SwingConstants.RIGHT);*/
+        saveRdfTableaux.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+               this.saveRdfTableauxActionPerformed(evt);
+            }
+
+            private void saveRdfTableauxActionPerformed(ActionEvent evt) {
+                try {
+                    tableauxReference.save("Tableaux.rdf");
+                } catch (OWLException ex) {
+                    Logger.getLogger(OutputTableaux.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (IOException ex) {
+                    Logger.getLogger(OutputTableaux.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+        
+        frame.add(saveRdfTableaux);
         frame.setAlwaysOnTop(true);
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     }
+    
+   
     
     
     private float getTime(){
@@ -229,10 +261,10 @@ public class OutputTableaux extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void showGraphButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showGraphButtonActionPerformed
+        BufferedImage img;
         try {
-            // TODO add your handling code here:
-            BufferedImage img=tableauxReference.toImage(false);
-            showImage(img);
+            img = tableauxReference.toImage(false);
+                showImage(img);
         } catch (IOException ex) {
             Logger.getLogger(OutputTableaux.class.getName()).log(Level.SEVERE, null, ex);
         }

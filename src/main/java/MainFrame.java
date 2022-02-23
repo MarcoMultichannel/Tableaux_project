@@ -185,8 +185,7 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
 
                 System.out.println("Clash: "+tableauxReference.getClashes());
             }*/
-
-           // tableauxReference.save("result.rdf");
+          
             //BufferedImage img=tableauxReference.toImage(false);
             //showImage(img);
             OutputTableaux outputTableaux = new OutputTableaux(this,timeElapsed);
