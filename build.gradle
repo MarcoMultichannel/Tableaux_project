@@ -23,3 +23,13 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'MainFrame'
+    }
+    from {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
