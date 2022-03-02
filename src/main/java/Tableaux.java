@@ -101,6 +101,7 @@ public class Tableaux {
             long finish = System.nanoTime();
             timeElapsed=(finish - start)/1000000f;
             createRDFmodel();
+            Individual.setNextID(0);
         } catch (OWLException e) {
             System.out.println("Errore nel tableaux");
             e.printStackTrace();
