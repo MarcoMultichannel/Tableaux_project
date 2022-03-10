@@ -48,6 +48,7 @@ public class GraphView extends javax.swing.JFrame {
            titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
             jButton1.setHorizontalAlignment(SwingConstants.RIGHT);
             jButton1.setVerticalAlignment(SwingConstants.BOTTOM);
+            setLocation(50, 250);
         } catch (IOException ex) {
             Logger.getLogger(GraphView.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -113,26 +114,9 @@ public class GraphView extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
-             try {
-                        tableauxReference.save("Tableaux.rdf");
-                        File file = new File("Tableaux.rdf");
-                        JDialog dialog = new JDialog();
-                        dialog.setSize(200, 200);
-                        dialog.setLocation(500,250);
-                        dialog.setModalityType(ModalityType.APPLICATION_MODAL);
-                        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-                        dialog.setAlwaysOnTop(true);
-                        JLabel resText = new JLabel();
-                        if(file.exists() && !file.isDirectory())    resText.setText("Grafo Salvato Correttamente!");
-                        else  resText.setText("Errore nel salvataggio del Grafo!");
-                        dialog.add(resText);
-                        resText.setHorizontalAlignment(SwingConstants.CENTER);
-                        dialog.setVisible(true);
-                    } catch (OWLException ex) {
-                        Logger.getLogger(OutputTableaux.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (IOException ex) {
-                        Logger.getLogger(OutputTableaux.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+          ChoiceFileFrame output = new ChoiceFileFrame(this, dataInterface);
+          output.setAlwaysOnTop(true);
+          output.setVisible(true);
     }//GEN-LAST:event_jButton1ActionPerformed
 
     /**
