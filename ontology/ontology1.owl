@@ -1,0 +1,54 @@
+Prefix: ALC: <urn://alc/>
+Prefix: owl: <http://www.w3.org/2002/07/owl#>
+Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+Prefix: xml: <http://www.w3.org/XML/1998/namespace>
+Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
+
+
+
+Ontology: <http://www.semanticweb.org/marco/ontologies/2022/2/ontology>
+
+
+ObjectProperty: ALC:R
+
+    
+ObjectProperty: ALC:S
+
+    
+ObjectProperty: ALC:T
+
+    
+Class: ALC:A
+
+    SubClassOf: 
+        ALC:R some ALC:B
+    
+    
+Class: ALC:B
+
+    SubClassOf: 
+        ALC:E
+    
+Class: ALC:C
+
+    
+Class: ALC:D
+
+    EquivalentTo: 
+        ALC:A
+         and ALC:C
+    
+    
+Class: ALC:E
+
+    SubClassOf: 
+        ALC:B
+    
+    
+Class: ALC:F
+
+    SubClassOf: 
+        ALC:C
+    
+    
