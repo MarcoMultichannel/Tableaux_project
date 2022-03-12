@@ -4,7 +4,6 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.swing.filechooser.FileFilter;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
@@ -13,6 +12,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLException;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
@@ -166,14 +166,15 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
 
     private void computeTableauxButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_computeTableauxButtonActionPerformed
         // TODO add your handling code here:
-        String conceptOntology = jTextArea1.getText();
+        String conceptText = jTextArea1.getText();
         OWLOntology terminology = null;
         MyOWLParser parser=new MyOWLParser();
         try {
-            OWLOntology concept = parser.loadOntologyFromString(conceptOntology);
             terminology = parser.loadOntologyFromFile(terminologyPath);
-            tableauxReference=new Tableaux(parser, concept, terminology);
-            float timeElapsed=tableauxReference.execute();
+            OWLClassExpression concept = parser.parseConcept(terminology, conceptText);
+            tableauxReference=new Tableaux(parser, terminology);
+            boolean sat=tableauxReference.isSatisfiable(concept);
+            float timeElapsed=tableauxReference.getTimeElapsed();
            /*
              System.out.println("Concetto in input: "+tableauxReference.htmlEncode(tableauxReference.getConcept()));
             

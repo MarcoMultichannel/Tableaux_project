@@ -9,6 +9,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import org.semanticweb.owlapi.expression.ShortFormEntityChecker;
+import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl;
+import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxPrefixNameShortFormProvider;
+import org.semanticweb.owlapi.util.BidirectionalShortFormProvider;
+import org.semanticweb.owlapi.util.BidirectionalShortFormProviderAdapter;
+import org.semanticweb.owlapi.util.ShortFormProvider;
+import org.semanticweb.owlapi.util.mansyntax.ManchesterOWLSyntaxParser;
 
 public class MyOWLParser {
     private final OWLOntologyManager manager;
@@ -21,6 +29,20 @@ public class MyOWLParser {
     public OWLOntology loadOntologyFromString(String document) throws OWLOntologyCreationException {
         StringDocumentSource ontologyString=new StringDocumentSource(document);
         return manager.loadOntologyFromOntologyDocument(ontologyString);
+    }
+    public OWLClassExpression parseConcept(OWLOntology ont, String ce){
+        ManchesterOWLSyntaxParser manchesterParser=OWLManager.createManchesterParser();
+        manchesterParser.setDefaultOntology(ont);
+        manchesterParser.setStringToParse(ce);
+        ShortFormEntityChecker checker = new ShortFormEntityChecker(getShortFormProvider(ont));
+        manchesterParser.setOWLEntityChecker(checker);
+        return manchesterParser.parseClassExpression();
+    }
+    private BidirectionalShortFormProvider getShortFormProvider(OWLOntology ont) {
+        Set<OWLOntology> ontologies = manager.getOntologies();
+        ShortFormProvider sfp = new ManchesterOWLSyntaxPrefixNameShortFormProvider(manager.getOntologyFormat(ont));
+        BidirectionalShortFormProvider shortFormProvider = new BidirectionalShortFormProviderAdapter(ontologies, sfp);
+        return shortFormProvider;
     }
     public Map<String, String> getPrefixMap(OWLOntology ontology){
         OWLDocumentFormat format = manager.getOntologyFormat(ontology);

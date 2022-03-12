@@ -37,17 +37,16 @@ public class Tableaux implements OWLReasoner {
     private static final String ALC_NAMESPACE="urn://alc/";
     private static final String CONCEPT_NAME="<"+ALC_NAMESPACE+"Concept>";
     private final Map<String, String> prefix_nsMap;
-    private final OWLClassExpression concept;
+    private OWLClassExpression concept;
     private OWLClassExpression concept_Tbox;
     private List<OWLSubClassOfAxiom> Tbox_unfoldable;
     private final MyOWLParser parser;
     private HashSet<Individual> individuals;
     private Model model;
     private Set<OWLClass> clashes;
+    private float timeElapsed;
+    /*
     public Tableaux(@NotNull MyOWLParser parser, OWLOntology C) throws OWLException {
-        this.parser=parser;
-        //Carico i prefissi del namespace
-        prefix_nsMap=parser.getPrefixMap(C);
         //Carico il concetto C
         List<OWLEquivalentClassesAxiom> axioms=parser.getEquivalentClassesAxioms(C);
         if(axioms.isEmpty())
@@ -64,9 +63,12 @@ public class Tableaux implements OWLReasoner {
             else
                 throw new OWLException("Errore nel concetto C");
         }
-    }
-    public Tableaux(MyOWLParser parser, OWLOntology C, OWLOntology T) throws OWLException {
-        this(parser, C);
+    }*/
+    public Tableaux(MyOWLParser parser, OWLOntology T) throws OWLException {
+        this.parser=parser;
+        //Carico i prefissi del namespace
+        prefix_nsMap=parser.getPrefixMap(T);
+        concept=null;
         List<OWLSubClassOfAxiom> subclassAxioms=parser.getSubClassAxioms(T);
         Tbox_unfoldable=getUnfoldableComponent(subclassAxioms);
         subclassAxioms.removeAll(Tbox_unfoldable);
@@ -98,7 +100,8 @@ public class Tableaux implements OWLReasoner {
         // Usare classe parser per prendere parte sinistra e destra.
         return result;
     }
-    public float execute(){
+    public float execute(OWLClassExpression ce){
+        concept=ce;
         individuals=new HashSet<>();
         float timeElapsed=0;
         try {
@@ -445,10 +448,13 @@ private @NotNull String formatClashes(@NotNull Set<OWLClass> clashes) {
         }
         return result;
     }
-
+    public float getTimeElapsed(){
+        return this.timeElapsed;
+    }
     @Override
     public boolean isSatisfiable(OWLClassExpression classExpression) {
-       return false;
+        timeElapsed=execute(classExpression);
+        return clashes.isEmpty();
     }
 
     @Override

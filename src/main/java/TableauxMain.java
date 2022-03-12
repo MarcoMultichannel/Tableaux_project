@@ -4,6 +4,10 @@ import org.semanticweb.owlapi.model.OWLOntology;
 import javax.swing.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.semanticweb.owlapi.model.OWLClassExpression;
+import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
 public class TableauxMain {
     static {
@@ -20,26 +24,18 @@ public class TableauxMain {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
     public static void main(String[] args) {
-        String conceptOntology;
-        conceptOntology = """
-                Prefix: ALC: <urn://alc/>
-                Class: ALC:A
-                Class: ALC:B
-                Class: ALC:C
-                Class: ALC:D
-                ObjectProperty: ALC:R
-                Class: ALC:Concept
-                   EquivalentTo: ALC:A and ALC:B and (ALC:R some (not(ALC:A)))""";
+        String conceptString="ALC:A and (ALC:R some (not(ALC:A)))";
         MyOWLParser parser=new MyOWLParser();
         try {
-            OWLOntology concept = parser.loadOntologyFromString(conceptOntology);
             OWLOntology terminology = parser.loadOntologyFromFile(terminologyPath);
-            Tableaux tab=new Tableaux(parser, concept, terminology);
+            OWLClassExpression concept = parser.parseConcept(terminology, conceptString);
+            Tableaux tab=new Tableaux(parser, terminology);
+            boolean sat=tab.isSatisfiable(concept);
+            float timeElapsed=tab.getTimeElapsed();
             System.out.println("Concetto in input: "+tab.getConcept());
-            float timeElapsed=tab.execute();
             System.out.println("Tempo impiegato: "+timeElapsed+"ms");
 
-            if(tab.isClashFree())
+            if(sat)
                 System.out.println("Il concetto C è soddisfacibile");
             else {
                 System.out.println("Il concetto C è insoddisfacibile");
