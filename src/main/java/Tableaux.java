@@ -39,7 +39,7 @@ public class Tableaux implements OWLReasoner {
     private final Map<String, String> prefix_nsMap;
     private OWLClassExpression concept;
     private OWLClassExpression concept_Tbox;
-    private List<OWLSubClassOfAxiom> Tbox_unfoldable;
+    private List<OWLAxiom> Tbox_unfoldable;
     private final MyOWLParser parser;
     private HashSet<Individual> individuals;
     private Model model;
@@ -50,14 +50,27 @@ public class Tableaux implements OWLReasoner {
         //Carico i prefissi del namespace
         prefix_nsMap=parser.getPrefixMap(T);
         concept=null;
-        List<OWLSubClassOfAxiom> subclassAxioms=parser.getSubClassAxioms(T);
-        Tbox_unfoldable=getUnfoldableComponent(subclassAxioms);
-        subclassAxioms.removeAll(Tbox_unfoldable);
+        
+        List<OWLAxiom> axioms=parser.getAxioms(T);
+        
+        //Estraggo la componente unfoldable
+        Tbox_unfoldable=getUnfoldableComponent(axioms);
+        
+        //Tolgo ciò che è stato preso nella TBox unfoldable
+        axioms.removeAll(Tbox_unfoldable);
+        
+        //Separa inclusioni ed equivalenze
+        List<OWLSubClassOfAxiom> subclassAxioms=parser.getSubClassAxioms(axioms);
+        List<OWLEquivalentClassesAxiom> equivalenceAxioms=parser.getEquivalentClassesAxioms(axioms);
+        
+        //Converto equivalenze in doppie inclusioni
         for(OWLEquivalentClassesAxiom eqAxiom:parser.getEquivalentClassesAxioms(T)) {
             List<OWLClassExpression> classes=parser.unpackEquilvalentClassesAxiom(eqAxiom);
             subclassAxioms.add(new OWLSubClassOfAxiomImpl(classes.get(0), classes.get(1), new HashSet<>()));
             subclassAxioms.add(new OWLSubClassOfAxiomImpl(classes.get(1), classes.get(0), new HashSet<>()));
         }
+        
+        //Costruisco componente general
         concept_Tbox=getTboxConcept(subclassAxioms);
     }
 
@@ -75,10 +88,20 @@ public class Tableaux implements OWLReasoner {
         if(operands.isEmpty()) return null;
         else return new OWLObjectIntersectionOfImpl(operands);
     }
-    private @NotNull List<OWLSubClassOfAxiom> getUnfoldableComponent(List<OWLSubClassOfAxiom> subClassOfAxioms){
-        List<OWLSubClassOfAxiom> result=new ArrayList<>();
+    private @NotNull List<OWLAxiom> getUnfoldableComponent(List<OWLAxiom> axioms){
+        List<OWLAxiom> result=new ArrayList<>();
         //TODO prendi componente unfoldable
-        // Usare classe parser per prendere parte sinistra e destra.
+        //Per vedere se è equivalenza o un inclusione usare i metodi parser.isSubClassOfAxiom(axiom) e parser.isEquivalentClassesAxiom(axiom)
+        // Usare parser per prendere parte sinistra e destra.
+            /*ESEMPIO:
+               List<OWLClassExpression> ce=parser.unpackSubClassAxioms(axiom);
+               OWLClassExpression subclass=ce.get(0);
+               OWLClassExpression superclass=ce.get(1);
+        
+               List<OWLClassExpression> ce=parser.unpackEquivalentClassesAxiom(axiom);
+               OWLClassExpression sx=ce.get(0);
+               OWLClassExpression dx=ce.get(1);
+            */  
         return result;
     }
     public float execute(OWLClassExpression ce){
@@ -200,6 +223,25 @@ public class Tableaux implements OWLReasoner {
     private @NotNull Set<OWLClass> unfoldableExpantionRules(Individual individual) {
         Set<OWLClass> clashes=new HashSet<>();
         //TODO applica le regole di espansione del lazy unfolding
+        /*PSEUDOCODICE:
+            Set<Class> unfoldableRules(individual)
+            foreach equivalence in equivalences
+                    leftConcept=equivalence.getLeft();
+                    rightConcept=equivalence.getRight();
+                    if individual.label.contains(leftConcept)
+                            individual.addConcept(rightConcept);
+            foreach inclusion in inclusions
+                    subclass=inclusion.getSubclass();
+                    superclass=inclusion.getSuperclass();
+                    if individual.label.contains(subclass)
+                            individual.addConcept(superclass);
+        */
+        /*
+            Per prendere equivalenze:
+                parser.getEquivalentClassesAxioms(Tbox_unfoldable)
+            Per prendere inclusioni:
+                parser.getSubClassAxioms(Tbox_unfoldable)
+        */
         return clashes;
     }
 

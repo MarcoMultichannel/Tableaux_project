@@ -50,11 +50,30 @@ public class MyOWLParser {
             map = format.asPrefixOWLDocumentFormat().getPrefixName2PrefixMap();
         return map;
     }
+    public List<OWLAxiom> getAxioms(@NotNull OWLOntology ont){
+        return new ArrayList<>(ont.getAxioms(Imports.EXCLUDED));
+    }
     public List<OWLEquivalentClassesAxiom> getEquivalentClassesAxioms(@NotNull OWLOntology ont){
         return new ArrayList<>(ont.getAxioms(AxiomType.EQUIVALENT_CLASSES,Imports.EXCLUDED));
     }
     public List<OWLSubClassOfAxiom> getSubClassAxioms(@NotNull OWLOntology ont){
         return new ArrayList<>(ont.getAxioms(AxiomType.SUBCLASS_OF,Imports.EXCLUDED));
+    }
+    public List<OWLEquivalentClassesAxiom> getEquivalentClassesAxioms(@NotNull List<OWLAxiom> axioms){
+        ArrayList<OWLEquivalentClassesAxiom> result=new ArrayList<>();
+        for(OWLAxiom ax:axioms){
+            if(this.isEquivalentClassesAxiom(ax))
+                result.add((OWLEquivalentClassesAxiom)ax);
+        }
+        return result;
+    }
+    public List<OWLSubClassOfAxiom> getSubClassAxioms(@NotNull List<OWLAxiom> axioms){
+        ArrayList<OWLSubClassOfAxiom> result=new ArrayList<>();
+        for(OWLAxiom ax:axioms){
+            if(this.isSubClassOfAxiom(ax))
+                result.add((OWLSubClassOfAxiom)ax);
+        }
+        return result;
     }
     public List<OWLClassExpression> unpackEquilvalentClassesAxiom(@NotNull OWLEquivalentClassesAxiom axiom) throws OWLException {
         if(axiom.getAxiomType()!=AxiomType.EQUIVALENT_CLASSES){
@@ -150,5 +169,11 @@ public class MyOWLParser {
     }
     public boolean isBottom(@NotNull OWLClassExpression ce){
         return ce.isOWLNothing();
+    }
+    public boolean isSubClassOfAxiom(@NotNull OWLAxiom ax){
+        return ax.isOfType(AxiomType.SUBCLASS_OF);
+    }
+    public boolean isEquivalentClassesAxiom(@NotNull OWLAxiom ax){
+        return ax.isOfType(AxiomType.EQUIVALENT_CLASSES);
     }
 }
