@@ -13,9 +13,10 @@ public class Individual {
     public int id;
     public Queue<OWLClassExpression> ands, ors, exists, foreaches;
     public ArrayList<OWLClassExpression> label;
+    public OWLClassExpression lastOR;
     public HashMap<OWLObjectPropertyExpression, HashSet<Individual>> arches;
     public HashSet<Individual> individualsConnected;
-    public ArrayList<ArrayList<OWLClassExpression>> previousLabels;
+    public HashMap<OWLClassExpression, HashSet<ArrayList<OWLClassExpression>>> previousLabelsMap;
     public static int numIndividuals=0;
     public boolean blocked;
     private final MyOWLParser parser;
@@ -32,7 +33,7 @@ public class Individual {
         arches=new HashMap<>();
         individualsConnected=new HashSet<>();
 
-        previousLabels=new ArrayList<>();
+        previousLabelsMap=new HashMap<>();
         label=new ArrayList<>();
     }
     public Individual(@NotNull Individual individual){
@@ -45,7 +46,7 @@ public class Individual {
         this.exists=new LinkedList<>(individual.exists);
         this.foreaches=new LinkedList<>(individual.foreaches);
         this.individualsConnected=new HashSet<>(individual.individualsConnected);
-        this.previousLabels=new ArrayList<>(individual.previousLabels);
+        this.previousLabelsMap=new HashMap<>(individual.previousLabelsMap);
         this.blocked=individual.blocked;
     }
     public boolean equals(Object obj) {
@@ -74,8 +75,17 @@ public class Individual {
         for(OWLClassExpression ce:ce_list)
             addConcept(ce);
     }
-    public void addClashLabel(ArrayList<OWLClassExpression> label){
-        previousLabels.add(new ArrayList<>(label));
+    public void addClashLabel(OWLClassExpression or, ArrayList<OWLClassExpression> label){
+        if(previousLabelsMap.containsKey(or)){
+            HashSet<ArrayList<OWLClassExpression>> labelsSet=previousLabelsMap.get(or);
+            labelsSet.add(label);
+        }
+        else{
+            HashSet<ArrayList<OWLClassExpression>> labelsSet=new HashSet<>();
+            labelsSet.add(label);
+            previousLabelsMap.put(or, labelsSet);
+        }
+        lastOR=or;
     }
     public void newArchTo(OWLObjectPropertyExpression role, Individual individual){
         this.individualsConnected.add(individual);
@@ -91,15 +101,23 @@ public class Individual {
     }
 
     public boolean isBlocked(@NotNull HashSet<Individual> individuals) {
-        //TODO trova un modo più furbo per il blocking
         boolean isBlocked=false;
+        ArrayList<OWLClassExpression> labelNoANDs=removeANDs(this.label);
         for(Individual individual:individuals){
-            if(this.id>individual.id && individual.label.containsAll(this.label)) {
+            if(this.id>individual.id && individual.label.containsAll(labelNoANDs)) {
                 isBlocked = true;
                 break;
             }
         }
         return isBlocked;
+    }
+    private ArrayList<OWLClassExpression> removeANDs(ArrayList<OWLClassExpression> label){
+        ArrayList<OWLClassExpression> newLabel=new ArrayList<>();
+        for(OWLClassExpression ce:label){
+            if(!parser.isIntersection(ce))
+                newLabel.add(ce);
+        }
+        return newLabel;
     }
     public void markAsBlocked(){
         blocked=true;

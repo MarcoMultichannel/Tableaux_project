@@ -45,25 +45,6 @@ public class Tableaux implements OWLReasoner {
     private Model model;
     private Set<OWLClass> clashes;
     private float timeElapsed;
-    /*
-    public Tableaux(@NotNull MyOWLParser parser, OWLOntology C) throws OWLException {
-        //Carico il concetto C
-        List<OWLEquivalentClassesAxiom> axioms=parser.getEquivalentClassesAxioms(C);
-        if(axioms.isEmpty())
-            //Se l'ontologia del concetto C non è del tipo C equivalente <concept>
-            throw new OWLException("Errore nel concetto C");
-        else{
-            List<OWLClassExpression> classExpressions=parser.unpackEquilvalentClassesAxiom(axioms.get(0));
-            OWLClassExpression left=classExpressions.get(0);
-            OWLClassExpression right=classExpressions.get(1);
-            if(left.toString().equals(CONCEPT_NAME)) {
-                //Trasformiamo in forma NNF
-                concept = right.getNNF();
-            }
-            else
-                throw new OWLException("Errore nel concetto C");
-        }
-    }*/
     public Tableaux(MyOWLParser parser, OWLOntology T) throws OWLException {
         this.parser=parser;
         //Carico i prefissi del namespace
@@ -108,7 +89,7 @@ public class Tableaux implements OWLReasoner {
             long start = System.nanoTime();
             Individual individual=new Individual();
             individual.addConcept(concept);
-            individual.addConcept(concept_Tbox);
+            individual.addConcepts(parser.unpackIntersection(concept_Tbox));
             clashes=computeTableaux(individual);
             long finish = System.nanoTime();
             timeElapsed=(finish - start)/1000000f;
@@ -149,7 +130,8 @@ public class Tableaux implements OWLReasoner {
         }
         //OR
         while (!individual.ors.isEmpty()) {
-            Queue<OWLClassExpression> disjoints = new LinkedList<>(parser.unpackUnion(individual.ors.remove()));
+            OWLClassExpression or=individual.ors.remove();
+            Queue<OWLClassExpression> disjoints = new LinkedList<>(parser.unpackUnion(or));
             while(!disjoints.isEmpty()){
                 OWLClassExpression disjoint=disjoints.remove();
                 //Mi salvo lo stato corrente per fare backtracking nel caso il disgiunto non va bene
@@ -170,7 +152,7 @@ public class Tableaux implements OWLReasoner {
                     individuals.add(oldIndividual);
                     ArrayList<OWLClassExpression> clashLabel=individual.label;
                     individual=oldIndividual;
-                    individual.addClashLabel(clashLabel);
+                    individual.addClashLabel(or, clashLabel);
                     Individual.setNextID(individual.id+1);
                 }
             }
@@ -181,44 +163,36 @@ public class Tableaux implements OWLReasoner {
         //CLASH CHECK
         if(!getClashes(individual).isEmpty()) return getClashes(individual);
 
-        //Creo una mappa per utilizzare un solo individuo per ogni ruolo
-        HashMap<OWLObjectPropertyExpression, Individual> newArches=new HashMap<>();
-
         while(!individual.exists.isEmpty()){
             OWLClassExpression ce=individual.exists.remove();
             //Estraggo il ruolo ed il concetto dall'esiste
             OWLObjectPropertyExpression role = parser.getExistRole(ce);
             OWLClassExpression classExpression = parser.getExistClassExpression(ce);
 
-            //Se già c'è un individuo con quel ruolo uso quello
-            Individual existingIndividual=newArches.get(role);
-            //Altrimenti ne creo un nuovo
-            if (existingIndividual==null) {
-                existingIndividual = new Individual();
-                existingIndividual.addConcept(concept_Tbox);
-                newArches.put(role, existingIndividual);
-            }
+            Individual newIndividual = new Individual();
+            newIndividual.addConcepts(parser.unpackIntersection(concept_Tbox));
+            
             //Aggiungo il concetto al nuovo individuo e aggiungo l'arco R(x,y)
-            existingIndividual.addConcept(classExpression);
-            individual.newArchTo(role,existingIndividual);
-        }
-
-        //PerOgni
-        while(!individual.foreaches.isEmpty()){
-            OWLClassExpression ce=individual.foreaches.remove();
-            //Estraggo il ruolo ed il concetto dal per ogni
-            OWLObjectPropertyExpression role=parser.getForeachRole(ce);
-            OWLClassExpression classExpression=parser.getForeachClassExpression(ce);
-            //per ogni z tale che R(x,z) aggiungo il concetto
-            for(Individual singleIndividual: individual.arches.get(role))
-                singleIndividual.addConcept(classExpression);
+            newIndividual.addConcept(classExpression);
+            individual.newArchTo(role,newIndividual);
+            
+            //PerOgni
+            while(!individual.foreaches.isEmpty()){
+                OWLClassExpression ceFor=individual.foreaches.remove();
+                //Estraggo il ruolo ed il concetto dal per ogni
+                OWLObjectPropertyExpression roleFor=parser.getForeachRole(ceFor);
+                OWLClassExpression classExpressionFor=parser.getForeachClassExpression(ceFor);
+                
+                //per ogni z tale che R(x,z) aggiungo il concetto
+                if(role.equals(roleFor))
+                    newIndividual.addConcept(classExpression);
+            }
         }
 
         //CLASH CHECK sui nuovi individui y
         for(Individual singleIndividual: individual.individualsConnected){
             clashes=computeTableaux(singleIndividual);
-            if (clashes.isEmpty()) break;
-            else return clashes;
+            if (!clashes.isEmpty()) return clashes;
         }
         return clashes;
     }
@@ -266,20 +240,28 @@ public class Tableaux implements OWLReasoner {
         for(Individual individual:individuals){
             String individualURI = TAB_NAMESPACE+"x"+individual.id;
             Resource individualResource = model.createResource(individualURI);
-            Property clash=model.createProperty( TAB_NAMESPACE + "CLASH" );
-            Property hasLabel=model.createProperty( TAB_NAMESPACE + "L" );
-            Property disjointLabel=model.createProperty( TAB_NAMESPACE + "OR" );
             Property blockedLabel=model.createProperty( TAB_NAMESPACE + "BLOCKED" );
             if(individual.blocked)
                 individualResource.addLiteral(blockedLabel, "Yes");
-            if(getClashes(individual).isEmpty())
-                individualResource.addLiteral(hasLabel, formatLabel(individual.label));
-            else {
-                individualResource.addLiteral(clash, formatClashes(getClashes(individual)));
-                individualResource.addLiteral(hasLabel, formatLabel(individual.label) + ", CLASH.");
+            Property disjointLabel;
+            int i=1;
+            for(OWLClassExpression or:individual.previousLabelsMap.keySet()){
+                for(ArrayList<OWLClassExpression> oldLabel:individual.previousLabelsMap.get(or)){
+                    disjointLabel=model.createProperty( TAB_NAMESPACE + "OR"+i);
+                    i++;
+                    individualResource.addLiteral(disjointLabel, formatLabel(oldLabel, or)+", CLASH.");
+                }
             }
-            for(ArrayList<OWLClassExpression> oldLabel:individual.previousLabels)
-                individualResource.addLiteral(disjointLabel, formatLabel(oldLabel)+", CLASH.");
+            Property lastLabel=model.createProperty( TAB_NAMESPACE + "OR" +i);
+            String labelStr;
+            if(individual.lastOR!=null)
+                labelStr=formatLabel(individual.label, individual.lastOR);
+            else
+                labelStr=formatLabel(individual.label);
+            if(getClashes(individual).isEmpty())
+                individualResource.addLiteral(lastLabel, labelStr);
+            else
+                individualResource.addLiteral(lastLabel, labelStr + ", CLASH.");
         }
         model.setNsPrefix( "tab", TAB_NAMESPACE );
         for(String prefix:prefix_nsMap.keySet()) {
@@ -301,6 +283,8 @@ public class Tableaux implements OWLReasoner {
             String subject=triple.getSubject().toString();
             String predicate=triple.getPredicate().toString();
             String object=htmlEncode(triple.getObject().toString());
+            object=object.replace("[", "<font color=\"red\">");
+            object=object.replace("]", "</font>");
             for(String prefix:prefixMap.keySet()){
                 String replacement="";
                 if(addPrefixes) replacement=prefix+":";
@@ -311,12 +295,13 @@ public class Tableaux implements OWLReasoner {
                     object=object.replaceAll(prefix+":",replacement);
             }
             g.add(mutNode(subject).add(Attributes.attr("shape","rectangle")).addLink(to(
-                    mutNode(object).add(Attributes.attr("shape","rectangle"))
+                    mutNode(Label.html(object))
+                        .add(Attributes.attr("shape","rectangle"))
                             .add(Attributes.attr("fontname","Cambria Math")))
                                 .with(Label.of(predicate))));
             g.graphAttrs().add(Attributes.attr("rankdir","LR"));
         }
-        return Graphviz.fromGraph(g).scale(1.4).render(Format.SVG).toImage();
+        return Graphviz.fromGraph(g).scale(1.4).render(Format.PNG).toImage();
     }
     private String formatLabel(@NotNull List<OWLClassExpression> label) throws OWLException {
         StringBuilder result= new StringBuilder();
@@ -327,7 +312,14 @@ public class Tableaux implements OWLReasoner {
         }
         return replaceNSwithPrefixes(result.toString());
     }
-private @NotNull String formatClashes(@NotNull Set<OWLClass> clashes) {
+    private String formatLabel(@NotNull List<OWLClassExpression> label, OWLClassExpression highlightCe) throws OWLException {
+        String result=formatLabel(label);
+        String or=replaceNSwithPrefixes(formatClassExpression(highlightCe));
+        String newOr='['+or+']';
+        result=result.replace(or, newOr);
+        return result;
+    }
+    private @NotNull String formatClashes(@NotNull Set<OWLClass> clashes) {
         StringBuilder result= new StringBuilder();
         Iterator<OWLClass> clashes_iterator=clashes.iterator();
         for(int i=0;i<clashes.size();i++){
