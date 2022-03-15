@@ -10,10 +10,10 @@ import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLOntologyCreationException;
 
 public class TableauxMain {
-    static {
+    static { 
         System.setProperty("java.awt.headless", "false");
     }
-    public static final String terminologyPath="ontology/T.owl";
+    public static final String terminologyPath="ontology/ontology2.owl";
 
     public static void showImage(BufferedImage img){
         JFrame frame = new JFrame("Tableaux");

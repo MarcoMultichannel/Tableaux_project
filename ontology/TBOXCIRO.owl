@@ -5,4 +5,4 @@ Class: ALC:B
 ObjectProperty: ALC:R
 
 Class: ALC:A
-   SubClassOf: ALC:R some ALC:A
+   SubClassOf: ALC:B
