@@ -47,7 +47,7 @@ public class MyOWLParser {
         OWLDocumentFormat format = manager.getOntologyFormat(ontology);
         Map<String, String> map = new HashMap<>();
         if (format!=null && format.isPrefixOWLDocumentFormat())
-            map = format.asPrefixOWLDocumentFormat().getPrefixName2PrefixMap();
+            map = new HashMap<>(format.asPrefixOWLDocumentFormat().getPrefixName2PrefixMap());
         return map;
     }
     public List<OWLAxiom> getAxioms(@NotNull OWLOntology ont){

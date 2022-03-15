@@ -7,9 +7,9 @@
 @prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
 
 tab:x0  ALC:R    tab:x2 , tab:x1 ;
-        tab:OR1  "ALC:A ⊓ (∃ALC:R.¬ALC:A), ¬ALC:C ⊔ ALC:D, ¬ALC:D ⊔ ALC:C, ALC:A, ∃ALC:R.¬ALC:A, ∃ALC:R.ALC:A, ¬ALC:C, ¬ALC:D" .
+        tab:OR1  "ALC:A ⊓ (∃ALC:R.¬ALC:A), ALC:A, ∃ALC:R.¬ALC:A, ∃ALC:R.ALC:A" .
 
 tab:x2  tab:BLOCKED  "Yes" ;
-        tab:OR1      "¬ALC:C ⊔ ALC:D, ¬ALC:D ⊔ ALC:C, ALC:A" .
+        tab:OR1      "ALC:A" .
 
-tab:x1  tab:OR1  "¬ALC:C ⊔ ALC:D, ¬ALC:D ⊔ ALC:C, ¬ALC:A, ¬ALC:C, ¬ALC:D" .
+tab:x1  tab:OR1  "¬ALC:A" .

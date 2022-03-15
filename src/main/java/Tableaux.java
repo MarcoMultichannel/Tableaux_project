@@ -38,12 +38,12 @@ import org.semanticweb.owlapi.util.Version;
 public class Tableaux implements OWLReasoner {
 
     private static final String TAB_NAMESPACE = "urn://tableaux_project#";
-    private static final String ALC_NAMESPACE = "urn://alc/";
-    private static final String CONCEPT_NAME = "<" + ALC_NAMESPACE + "Concept>";
+    private static final String TAB_PREFIX = "tab";
     private static GraphUnfoldable unfoldableGraphTBox = new GraphUnfoldable();
     private final Map<String, String> prefix_nsMap;
     private OWLClassExpression concept;
     private OWLClassExpression concept_Tbox;
+    private List<OWLAxiom> fullTbox;
     private List<OWLAxiom> Tbox_unfoldable;
     private final MyOWLParser parser;
     private HashSet<Individual> individuals;
@@ -56,16 +56,14 @@ public class Tableaux implements OWLReasoner {
         this.parser = parser;
         //Carico i prefissi del namespace
         prefix_nsMap = parser.getPrefixMap(T);
+        prefix_nsMap.put(TAB_PREFIX+":",TAB_NAMESPACE);
         concept = null;
 
-        List<OWLAxiom> axioms = parser.getAxioms(T);
-
+        fullTbox = parser.getAxioms(T);
+        ArrayList<OWLAxiom> axioms = new ArrayList<>(fullTbox);
         //Estraggo la componente unfoldable
-        //TODO: mostrare parte unfoldabled nel grafo.
         //TODO C EQUIVALENTE D E VICEVERSA COME VIENE TRATTATO ?
         Tbox_unfoldable = getUnfoldableComponent(axioms);
-        
-        System.out.println("BOXS-->"+Tbox_unfoldable.toString());
 
         //Tolgo ciò che è stato preso nella TBox unfoldable
         axioms.removeAll(Tbox_unfoldable);
@@ -75,7 +73,7 @@ public class Tableaux implements OWLReasoner {
         List<OWLEquivalentClassesAxiom> equivalenceAxioms = parser.getEquivalentClassesAxioms(axioms);
 
         //Converto equivalenze in doppie inclusioni
-        for (OWLEquivalentClassesAxiom eqAxiom : parser.getEquivalentClassesAxioms(T)) {
+        for (OWLEquivalentClassesAxiom eqAxiom : equivalenceAxioms) {
             List<OWLClassExpression> classes = parser.unpackEquilvalentClassesAxiom(eqAxiom);
             subclassAxioms.add(new OWLSubClassOfAxiomImpl(classes.get(0), classes.get(1), new HashSet<>()));
             subclassAxioms.add(new OWLSubClassOfAxiomImpl(classes.get(1), classes.get(0), new HashSet<>()));
@@ -441,24 +439,16 @@ public class Tableaux implements OWLReasoner {
         MutableGraph g = mutGraph("Tableaux");
         g.setDirected(true);
         Graph rdfGraph = model.getGraph();
-        Map<String, String> prefixMap = model.getNsPrefixMap();
         for (Triple triple : rdfGraph.stream().toList()) {
-            String subject = triple.getSubject().toString();
-            String predicate = triple.getPredicate().toString();
-            String object = htmlEncode(triple.getObject().toString());
+            String subject = replaceNSwithPrefixes(triple.getSubject().toString());
+            String predicate = replaceNSwithPrefixes(triple.getPredicate().toString());
+            String object = replaceNSwithPrefixes(htmlEncode(triple.getObject().toString()));
             object = object.replace("[", "<font color=\"red\">");
             object = object.replace("]", "</font>");
-            for (String prefix : prefixMap.keySet()) {
-                String replacement = "";
-                if (addPrefixes) {
-                    replacement = prefix + ":";
-                }
-                subject = subject.replaceAll(prefixMap.get(prefix), replacement);
-                predicate = predicate.replaceAll(prefixMap.get(prefix), replacement);
-                object = object.replaceAll(prefixMap.get(prefix), replacement);
-                if (!addPrefixes) {
-                    object = object.replaceAll(prefix + ":", replacement);
-                }
+            if(!addPrefixes){
+                subject=removePrefixes(subject);
+                predicate=removePrefixes(predicate);
+                object=removePrefixes(object);
             }
             g.add(mutNode(subject).add(Attributes.attr("shape", "rectangle")).addLink(to(
                     mutNode(Label.html(object))
@@ -466,6 +456,22 @@ public class Tableaux implements OWLReasoner {
                             .add(Attributes.attr("fontname", "Cambria Math")))
                     .with(Label.of(predicate))));
             g.graphAttrs().add(Attributes.attr("rankdir", "LR"));
+        }
+        
+        try {
+            String Tbox_unfoldableStr = htmlEncode(formatAxioms(Tbox_unfoldable));
+            String fullTboxStr = replaceNSwithPrefixes(htmlEncode(formatAxioms(fullTbox)));
+            String conceptStr = replaceNSwithPrefixes(htmlEncode(formatClassExpression(concept)));
+            if(!addPrefixes){
+                Tbox_unfoldableStr=removePrefixes(Tbox_unfoldableStr);
+                fullTboxStr=removePrefixes(fullTboxStr);
+                conceptStr=removePrefixes(conceptStr);
+            }
+            g.add(mutNode("C: "+conceptStr+"\nT: "+fullTboxStr+"\nTu: "+Tbox_unfoldableStr)
+                            .add(Attributes.attr("fontname", "Cambria Math"))
+                            .add(Attributes.attr("shape", "rectangle")));
+        } catch (OWLException ex) {
+            Logger.getLogger(Tableaux.class.getName()).log(Level.SEVERE, null, ex);
         }
         return Graphviz.fromGraph(g).scale(1.4).render(Format.PNG).toImage();
     }
@@ -488,7 +494,19 @@ public class Tableaux implements OWLReasoner {
         result = result.replace(or, newOr);
         return result;
     }
-
+    private String formatAxioms(@NotNull List<OWLAxiom> axioms) throws OWLException {
+        StringBuilder result = new StringBuilder();
+        for (int i = 0; i < axioms.size(); i++) {
+            if(parser.isSubClassOfAxiom(axioms.get(i)) || parser.isEquivalentClassesAxiom(axioms.get(i))){
+                result.append(formatAxiom(axioms.get(i)));
+                if (i != axioms.size() - 1) {
+                    result.append(", ");
+                }
+            }
+        }
+        return replaceNSwithPrefixes(result.toString());
+    }
+    
     private @NotNull
     String formatClashes(@NotNull Set<OWLClass> clashes) {
         StringBuilder result = new StringBuilder();
@@ -588,7 +606,27 @@ public class Tableaux implements OWLReasoner {
         }
         return result.toString();
     }
-
+    private @NotNull
+    String formatAxiom(OWLAxiom ax) throws OWLException {
+        StringBuilder result = new StringBuilder();
+        if(parser.isSubClassOfAxiom(ax)){
+            List<OWLClassExpression> list=parser.unpackSubClassAxioms((OWLSubClassOfAxiom)ax);
+            OWLClassExpression left=list.get(0);
+            OWLClassExpression right=list.get(1);
+            result.append(formatClassExpression(left));
+            result.append("⊑");
+            result.append(formatClassExpression(right));
+        }
+        else if(parser.isEquivalentClassesAxiom(ax)){
+            List<OWLClassExpression> list=parser.unpackEquilvalentClassesAxiom((OWLEquivalentClassesAxiom)ax);
+            OWLClassExpression left=list.get(0);
+            OWLClassExpression right=list.get(1);
+            result.append(formatClassExpression(left));
+            result.append("≡");
+            result.append(formatClassExpression(right));
+        }
+        return result.toString();
+    }
     private @NotNull
     String formatRole(@NotNull OWLObjectPropertyExpression role) {
         return role.toString().replaceAll("[<>]", "");
@@ -600,12 +638,15 @@ public class Tableaux implements OWLReasoner {
     }
 
     private String replaceNSwithPrefixes(String string) {
-        for (String prefix : prefix_nsMap.keySet()) {
+        for (String prefix : prefix_nsMap.keySet())
             string = string.replaceAll(prefix_nsMap.get(prefix), prefix);
-        }
         return string;
     }
-
+    private String removePrefixes(String string){
+        for (String prefix : prefix_nsMap.keySet())
+            string = string.replaceAll(prefix,"");
+        return string;
+    }
     public String htmlEncode(final @NotNull String string) {
         String result = string;
         for (int i = 0; i < string.length(); i++) {
@@ -616,6 +657,8 @@ public class Tableaux implements OWLReasoner {
             result = result.replace("⊔", "&#x2294;");
             result = result.replace("⊓", "&#x2293;");
             result = result.replace("¬", "&#xac;");
+            result = result.replace("⊑", "&#x2291;");
+            result = result.replace("≡", "&#x2261;");
         }
         return result;
     }
