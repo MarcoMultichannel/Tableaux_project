@@ -50,12 +50,13 @@ public class ChoiceFileFrame extends javax.swing.JFrame {
         choiceFileLabel = new javax.swing.JLabel();
         choiceFileButton = new javax.swing.JButton();
         choiceFileName = new javax.swing.JTextField();
+        jLabel1 = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
         titleLabel.setText("Salvataggio Grafo");
 
-        choiceFileLabel.setText("Scegli nome del file:");
+        choiceFileLabel.setText("Scegli nome del file :");
 
         choiceFileButton.setText("Conferma");
         choiceFileButton.addActionListener(new java.awt.event.ActionListener() {
@@ -63,6 +64,9 @@ public class ChoiceFileFrame extends javax.swing.JFrame {
                 choiceFileButtonActionPerformed(evt);
             }
         });
+
+        jLabel1.setFont(new java.awt.Font("Segoe UI", 2, 12)); // NOI18N
+        jLabel1.setText("(non è necessario inserire il formato)");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -78,14 +82,18 @@ public class ChoiceFileFrame extends javax.swing.JFrame {
                             .addGroup(layout.createSequentialGroup()
                                 .addContainerGap()
                                 .addComponent(choiceFileLabel, javax.swing.GroupLayout.PREFERRED_SIZE, 117, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addGap(0, 138, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                        .addGap(0, 0, Short.MAX_VALUE)
-                        .addComponent(choiceFileButton))
+                        .addGap(0, 141, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
                         .addContainerGap()
-                        .addComponent(choiceFileName)))
+                        .addComponent(choiceFileName))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addGap(0, 0, Short.MAX_VALUE)
+                        .addComponent(choiceFileButton, javax.swing.GroupLayout.PREFERRED_SIZE, 152, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 351, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -93,9 +101,11 @@ public class ChoiceFileFrame extends javax.swing.JFrame {
                 .addComponent(titleLabel)
                 .addGap(18, 18, 18)
                 .addComponent(choiceFileLabel)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(choiceFileName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 32, Short.MAX_VALUE)
+                .addGap(18, 18, 18)
                 .addComponent(choiceFileButton)
                 .addContainerGap())
         );
@@ -106,7 +116,14 @@ public class ChoiceFileFrame extends javax.swing.JFrame {
     private void choiceFileButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_choiceFileButtonActionPerformed
         // TODO add your handling code here:
            try {
-                       String nameFile = choiceFileName.getText().concat(".rdf");
+               String nameFile= "";
+                        if(choiceFileName.getText().toString().contains(".")){
+                            // user inserted also  the format, we must delete
+                             nameFile = choiceFileName.getText().toString().substring(0, choiceFileName.getText().toString().indexOf(".")).concat(".rdf");
+                             System.out.println("name if-->"+nameFile);
+                        }else{
+                            nameFile = choiceFileName.getText().concat(".rdf");
+                        }        
                         tableauxReference.save(nameFile);
                         File file = new File(nameFile);
                         JDialog dialog = new JDialog();
@@ -168,6 +185,7 @@ public class ChoiceFileFrame extends javax.swing.JFrame {
     private javax.swing.JButton choiceFileButton;
     private javax.swing.JLabel choiceFileLabel;
     private javax.swing.JTextField choiceFileName;
+    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel titleLabel;
     // End of variables declaration//GEN-END:variables
 }

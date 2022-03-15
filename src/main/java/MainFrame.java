@@ -1,5 +1,6 @@
 
 
+import java.awt.Font;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -119,23 +120,23 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
                 .addContainerGap()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(jLabel3)
+                        .addComponent(jLabel3, javax.swing.GroupLayout.PREFERRED_SIZE, 226, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addComponent(jButton2)
+                        .addComponent(jButton2, javax.swing.GroupLayout.PREFERRED_SIZE, 126, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(0, 0, Short.MAX_VALUE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(jScrollPane1, javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(33, 33, 33)
+                                .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, 153, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(0, 0, Short.MAX_VALUE))
                             .addGroup(layout.createSequentialGroup()
                                 .addGap(0, 0, Short.MAX_VALUE)
-                                .addComponent(computeTableauxButton))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                .addComponent(jLabel2)
-                                .addGap(0, 0, Short.MAX_VALUE))
-                            .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                                .addComponent(jLabel4)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(jLabel5, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                                .addComponent(computeTableauxButton, javax.swing.GroupLayout.PREFERRED_SIZE, 172, javax.swing.GroupLayout.PREFERRED_SIZE)))
                         .addContainerGap())))
         );
         layout.setVerticalGroup(
@@ -175,21 +176,6 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
             tableauxReference=new Tableaux(parser, terminology);
             boolean sat=tableauxReference.isSatisfiable(concept);
             float timeElapsed=tableauxReference.getTimeElapsed();
-           /*
-             System.out.println("Concetto in input: "+tableauxReference.htmlEncode(tableauxReference.getConcept()));
-            
-            System.out.println("Tempo impiegato: "+timeElapsed+"ms");
-
-            if(tableauxReference.isClashFree())
-                System.out.println("Il concetto C è soddisfacibile");
-            else {
-                System.out.println("Il concetto C è insoddisfacibile");
-
-                System.out.println("Clash: "+tableauxReference.getClashes());
-            }*/
-          
-            //BufferedImage img=tableauxReference.toImage(false);
-            //showImage(img);
             OutputTableaux outputTableaux = new OutputTableaux(this,timeElapsed);
             outputTableaux.setLocation(500, 250);
             outputTableaux.setAlwaysOnTop(true);
@@ -225,6 +211,8 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
                     
                     jLabel4.setVisible(true);
                     jLabel5.setText(selectedFile.getName());
+                    Font newLabelFont=new Font(jLabel5.getFont().getName(),Font.BOLD,jLabel5.getFont().getSize());
+                    jLabel5.setFont(newLabelFont);
                     
                     if(!jTextArea1.getText().isBlank()){
                         computeTableauxButton.setEnabled(true);
