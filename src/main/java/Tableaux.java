@@ -213,7 +213,7 @@ public class Tableaux implements OWLReasoner {
     }
 
     public String getClashes() {
-        return formatClashes(clashes);
+        return replaceNSwithPrefixes(formatClashes(clashes));
     }
 
     private Set<OWLClass> computeTableaux(Individual individual) throws OWLException {
@@ -274,7 +274,7 @@ public class Tableaux implements OWLReasoner {
         if (!getClashes(individual).isEmpty()) {
             return getClashes(individual);
         }
-
+        //EXISTS
         while (!individual.exists.isEmpty()) {
             OWLClassExpression ce = individual.exists.remove();
             //Estraggo il ruolo ed il concetto dall'esiste
@@ -287,27 +287,24 @@ public class Tableaux implements OWLReasoner {
             //Aggiungo il concetto al nuovo individuo e aggiungo l'arco R(x,y)
             newIndividual.addConcept(classExpression);
             individual.newArchTo(role, newIndividual);
-
-            //PerOgni
-            while (!individual.foreaches.isEmpty()) {
-                OWLClassExpression ceFor = individual.foreaches.remove();
-                //Estraggo il ruolo ed il concetto dal per ogni
-                OWLObjectPropertyExpression roleFor = parser.getForeachRole(ceFor);
-                OWLClassExpression classExpressionFor = parser.getForeachClassExpression(ceFor);
-
-                //per ogni z tale che R(x,z) aggiungo il concetto
-                if (role.equals(roleFor)) {
-                    newIndividual.addConcept(classExpression);
-                }
-            }
         }
+        //FOREACH
+        while (!individual.foreaches.isEmpty()) {
+            OWLClassExpression ceFor = individual.foreaches.remove();
 
-        //CLASH CHECK sui nuovi individui y
+            //Estraggo il ruolo ed il concetto dal per ogni
+            OWLObjectPropertyExpression roleFor = parser.getForeachRole(ceFor);
+            OWLClassExpression classExpressionFor = parser.getForeachClassExpression(ceFor);
+
+            //Per ogni individuo z tale che x---roleFor-->z) aggiungo il concetto classExpressionFor
+            for(Individual connectedIndividual:individual.arches.get(roleFor))
+                individual.addConcept(classExpressionFor);
+        }
         for (Individual singleIndividual : individual.individualsConnected) {
+            //CLASH CHECK sui nuovi individui y
             clashes = computeTableaux(singleIndividual);
-            if (!clashes.isEmpty()) {
+            if (!clashes.isEmpty())
                 return clashes;
-            }
         }
         return clashes;
     }
