@@ -227,15 +227,15 @@ public class Tableaux implements OWLReasoner {
         while (!individual.ands.isEmpty()) {
             individual.addConcepts(parser.unpackIntersection(individual.ands.remove()));
         }
+        clashes = unfoldableExpantionRules(individual);
+        if (!clashes.isEmpty()) {
+            return clashes;
+        }
         if (individual.isBlocked(individuals)) {
             individual.markAsBlocked();
             return clashes;
         }
         
-        clashes = unfoldableExpantionRules(individual);
-        if (!clashes.isEmpty()) {
-            return clashes;
-        }
         //OR
         while (!individual.ors.isEmpty()) {
             OWLClassExpression or = individual.ors.remove();
@@ -269,11 +269,12 @@ public class Tableaux implements OWLReasoner {
                 return clashes;
             }
         }
-
+        
         //CLASH CHECK
         if (!getClashes(individual).isEmpty()) {
             return getClashes(individual);
         }
+        
         //EXISTS
         while (!individual.exists.isEmpty()) {
             OWLClassExpression ce = individual.exists.remove();

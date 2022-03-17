@@ -13,7 +13,7 @@ public class TableauxMain {
     static { 
         System.setProperty("java.awt.headless", "false");
     }
-    public static final String terminologyPath="ontology/ontology2.owl";
+    public static final String terminologyPath="ontology/ontology3.owl";
 
     public static void showImage(BufferedImage img){
         JFrame frame = new JFrame("Tableaux");
@@ -24,7 +24,7 @@ public class TableauxMain {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
     public static void main(String[] args) {
-        String conceptString="ALC:A and (ALC:R some (not(ALC:A)))";
+        String conceptString="(ALC:A and (not(ALC:B))) or (ALC:B and (not(ALC:A)))";
         MyOWLParser parser=new MyOWLParser();
         try {
             OWLOntology terminology = parser.loadOntologyFromFile(terminologyPath);
