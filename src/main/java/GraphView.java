@@ -36,6 +36,7 @@ public class GraphView extends javax.swing.JFrame {
      */
     public GraphView(OutputTableaux old,DataByFrame data) {
         try {
+            //questo Jframe permetta la visualizzazione del Grafo RDF
             dataInterface = data;
             old = oldReferenceFrame;
             tableauxReference = dataInterface.getTableauxReference();
@@ -114,6 +115,7 @@ public class GraphView extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
         // TODO add your handling code here:
+        // questo metodo permette di salvare il grafo RDF in un file col nome che l'utente preferisce
           ChoiceFileFrame output = new ChoiceFileFrame(this, dataInterface);
           output.setAlwaysOnTop(true);
           output.setVisible(true);

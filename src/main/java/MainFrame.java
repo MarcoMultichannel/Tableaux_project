@@ -40,6 +40,8 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
         initComponents();
         this.setLocation(500,250);
         jLabel4.setVisible(false);
+        // inizialmente il tasto Esegui Tableaux viene disattivato
+        // sarà enabed quando l'utente inserirà concetto C e impoterà il file contenente Tbox
         computeTableauxButton.setEnabled(false);
     }
 
@@ -167,6 +169,7 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
 
     private void computeTableauxButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_computeTableauxButtonActionPerformed
         // TODO add your handling code here:
+        //il metodo avvia la procedura di verifica del concetto C rispetto ad una Tbox T
         String conceptText = jTextArea1.getText();
         OWLOntology terminology = null;
         MyOWLParser parser=new MyOWLParser();
@@ -176,6 +179,7 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
             tableauxReference=new Tableaux(parser, terminology);
             boolean sat=tableauxReference.isSatisfiable(concept);
             float timeElapsed=tableauxReference.getTimeElapsed();
+            // una volta terminato apriremo un nuovo JFrame
             OutputTableaux outputTableaux = new OutputTableaux(this,timeElapsed);
             outputTableaux.setLocation(500, 250);
             outputTableaux.setAlwaysOnTop(true);
@@ -189,7 +193,9 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
         // TODO add your handling code here:
+        //queto metodo permette il caricamento del file contenente la Tbox
         JFileChooser fileChooser = new JFileChooser();
+        // questa stringa permette di ricercare anche i file in formato .owl
         fileChooser.addChoosableFileFilter((FileFilter) new FileNameExtensionFilter("OWL Files","owl"));
         int returnValue = fileChooser.showOpenDialog(null);
         if (returnValue == JFileChooser.APPROVE_OPTION)
@@ -198,26 +204,30 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
                 File selectedFile = fileChooser.getSelectedFile();
                 terminologyPath = selectedFile.getPath();
                 MyOWLParser parser = new MyOWLParser();
+                //se il nome del file contiene .owl allora è il file che richiediamo
                  if(terminologyPath.contains(".owl")){
                     OWLOntology terminologyTemp = parser.loadOntologyFromFile(terminologyPath);
+                    //se però è vuoto lanciamo un errore per notificare l'utente
                     if(terminologyTemp.isEmpty()){
                         JOptionPane.showMessageDialog(MainFrame.this, "File Imported is Empty!");
                         selectedFile = null;
                         terminologyPath = null;
                          jLabel4.setVisible(false);
                          jLabel5.setText("");
+                         // grazie a return il metodo non proseguirà la sua esecuzione
                         return;
                     }
-                    
+                    //se il file non è Empty allora procediamo col visualizzare a video il nome del file
                     jLabel4.setVisible(true);
                     jLabel5.setText(selectedFile.getName());
                     Font newLabelFont=new Font(jLabel5.getFont().getName(),Font.BOLD,jLabel5.getFont().getSize());
                     jLabel5.setFont(newLabelFont);
-                    
+                    //se anche la textarea è valorizzara con il concetto C allora attiviamo il button Esegui Tableaux
                     if(!jTextArea1.getText().isBlank()){
                         computeTableauxButton.setEnabled(true);
                     }
                 }else {
+                     //se il metodo non è in formato OWL lanciamo errore ma non stoppiamo il programma
                      JOptionPane.showMessageDialog(MainFrame.this, "File Format Imported is not OWL!");
                         selectedFile = null;
                         terminologyPath = null;
@@ -238,6 +248,7 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
 
     private void jTextArea1KeyTyped(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextArea1KeyTyped
         // TODO add your handling code here:
+        //se la textArea contiene il concetto C e il file contenente la Tbox è stato importato allora il button Esegui Tableaux sarà attivato
         if( terminologyPath != null && !terminologyPath.isBlank() && !jTextArea1.getText().isBlank()){
             computeTableauxButton.setEnabled(true);
         }else{
@@ -280,15 +291,6 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
                 
             }
         });
-    }
-    
-       public static void showImage(BufferedImage img){
-        JFrame frame = new JFrame("Tableaux");
-        frame.setSize(1700,600);
-        frame.setLocation(100,100);
-        frame.add(new JLabel(new ImageIcon(img)));
-        frame.setVisible(true);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -16,11 +16,9 @@ import org.semanticweb.owlapi.model.OWLClassExpression;
  */
 public class GraphUnfoldable {
 
-    //private List<Vertex> vertices;
     private HashMap<OWLClassExpression,Vertex> verticesMap;
 
     public GraphUnfoldable() {
-      //  this.vertices = new ArrayList<>();
         this.verticesMap = new HashMap<>();
     }
     

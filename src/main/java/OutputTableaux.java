@@ -55,6 +55,7 @@ public class OutputTableaux extends javax.swing.JFrame {
      
     }
     public OutputTableaux(DataByFrame data,float time) {
+        // questo Jframe è responsabile di far visualizzare il risultato dell processo di verifica del concetto C rispetto alla Tbox T
         setTime(time);
         try {
             initComponents();
@@ -232,7 +233,7 @@ public class OutputTableaux extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void showGraphButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_showGraphButtonActionPerformed
-
+        //visualizziamo un nuovo Jframe che conterrà il grafo RDF
         GraphView output = new GraphView(this,dataInterface);
         output.setAlwaysOnTop(true);
         output.setVisible(true);
@@ -242,9 +243,9 @@ public class OutputTableaux extends javax.swing.JFrame {
 
     private void newConceptButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newConceptButtonActionPerformed
         // TODO add your handling code here:
+        // questo metodo resetterà tutto il programma e permetterà all'utente di inserire un nuovo concetto C e un nuovo file contenente la Tbox T
         dispose();
         MainFrame newFrame = new MainFrame();
-       // newFrame.setAlwaysOnTop(true);
         newFrame.setVisible(true);
     }//GEN-LAST:event_newConceptButtonActionPerformed
 

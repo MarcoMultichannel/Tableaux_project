@@ -22,9 +22,9 @@ import org.semanticweb.owlapi.model.OWLException;
  */
 public class ChoiceFileFrame extends javax.swing.JFrame {
 
-        private Tableaux tableauxReference;
- private DataByFrame dataInterface;
-    private GraphView oldReferenceFrame;
+       private Tableaux tableauxReference;
+       private DataByFrame dataInterface;
+       private GraphView oldReferenceFrame;
     /**
      * Creates new form ChoiceFileFrame
      */
@@ -116,6 +116,8 @@ public class ChoiceFileFrame extends javax.swing.JFrame {
     private void choiceFileButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_choiceFileButtonActionPerformed
         // TODO add your handling code here:
            try {
+               // se l'utente inserisce il formato del file (qualsiasi) allora il programma rimuoverà la substring contenente quel formato
+               // e la sostituirà con ".rdf" che sarà l'effettivo formato del file.
                String nameFile= "";
                         if(choiceFileName.getText().toString().contains(".")){
                             // user inserted also  the format, we must delete
@@ -133,6 +135,7 @@ public class ChoiceFileFrame extends javax.swing.JFrame {
                         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
                         dialog.setAlwaysOnTop(true);
                         JLabel resText = new JLabel();
+                        // se il file è stato salvato correttamente notificheremo l'utente con un Dialog di Success
                         if(file.exists() && !file.isDirectory())    resText.setText("Grafo Salvato Correttamente!");
                         else  resText.setText("Errore nel salvataggio del Grafo!");
                         dialog.add(resText);
