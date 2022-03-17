@@ -244,7 +244,7 @@ public class OutputTableaux extends javax.swing.JFrame {
         // TODO add your handling code here:
         dispose();
         MainFrame newFrame = new MainFrame();
-        newFrame.setAlwaysOnTop(true);
+       // newFrame.setAlwaysOnTop(true);
         newFrame.setVisible(true);
     }//GEN-LAST:event_newConceptButtonActionPerformed
 

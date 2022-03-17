@@ -217,7 +217,14 @@ public class MainFrame extends javax.swing.JFrame implements DataByFrame{
                     if(!jTextArea1.getText().isBlank()){
                         computeTableauxButton.setEnabled(true);
                     }
-                }
+                }else {
+                     JOptionPane.showMessageDialog(MainFrame.this, "File Format Imported is not OWL!");
+                        selectedFile = null;
+                        terminologyPath = null;
+                         jLabel4.setVisible(false);
+                         jLabel5.setText("");
+                        return;
+                 }
                 System.out.println(selectedFile.getName());
             } catch (OWLOntologyCreationException ex) {
                 Logger.getLogger(MainFrame.class.getName()).log(Level.SEVERE, null, ex);
