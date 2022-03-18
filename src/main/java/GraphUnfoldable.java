@@ -15,51 +15,60 @@ import org.semanticweb.owlapi.model.OWLClassExpression;
  * @author cirom
  */
 public class GraphUnfoldable {
-
-    private HashMap<OWLClassExpression,Vertex> verticesMap;
+    private HashMap<OWLClassExpression, Vertex> verticesMap;
 
     public GraphUnfoldable() {
         this.verticesMap = new HashMap<>();
     }
-    
+
+
+
     public GraphUnfoldable(GraphUnfoldable unfoldable) {
         this.verticesMap = new HashMap<>(unfoldable.verticesMap);
     }
 
 
-    public void addVertex( OWLClassExpression  ce) {
-     if( verticesMap.get(ce) == null) {
-        this.verticesMap.put(ce,new Vertex(ce));
-     }
+
+
+
+    public void addVertex(OWLClassExpression  ce) {
+        if(verticesMap.get(ce) == null) {
+            this.verticesMap.put(ce, new Vertex(ce));
+        }
     }
+
+
 
     public void addEdge(OWLClassExpression from, OWLClassExpression to) {
         verticesMap.get(from).addNeighbour(verticesMap.get(to));
     }
 
+
+
     public boolean hasCycle() {
-        for (Vertex vertex : verticesMap.values()) {
-            if (!vertex.isVisited() && hasCycle(vertex)) {
+        for(Vertex vertex : verticesMap.values()) {
+            if(!vertex.isVisited() && hasCycle(vertex)) {
                 return true;
             }
         }
         return false;
     }
 
+
+
     public boolean hasCycle(Vertex sourceVertex) {
         sourceVertex.setBeingVisited(true);
-
-        for (Vertex neighbour : sourceVertex.getAdjacencyList()) {
-            if (neighbour.isBeingVisited()) {
+        for(Vertex neighbour : sourceVertex.getAdjacencyList()) {
+            if(neighbour.isBeingVisited()) {
                 // backward edge exists
                 return true;
-            } else if (!neighbour.isVisited() && hasCycle(neighbour)) {
+            } else if(!neighbour.isVisited() && hasCycle(neighbour)) {
                 return true;
             }
         }
-
         sourceVertex.setBeingVisited(false);
         sourceVertex.setVisited(true);
         return false;
     }
+
 }

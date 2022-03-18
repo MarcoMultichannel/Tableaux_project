@@ -1,28 +1,6 @@
-
-import com.kitfox.svg.A;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Dialog;
-import java.awt.FlowLayout;
-import java.awt.GridBagLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ContainerEvent;
-import java.awt.event.ContainerListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.GroupLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.SwingConstants;
 import org.semanticweb.owlapi.model.OWLException;
 
 /*
@@ -54,7 +32,7 @@ public class OutputTableaux extends javax.swing.JFrame {
     public OutputTableaux(DataByFrame data) {
      
     }
-    public OutputTableaux(DataByFrame data,float time) {
+    public OutputTableaux(DataByFrame data, float time) {
         // questo Jframe è responsabile di far visualizzare il risultato dell processo di verifica del concetto C rispetto alla Tbox T
         setTime(time);
         try {
@@ -62,26 +40,24 @@ public class OutputTableaux extends javax.swing.JFrame {
             dataInterface = data;
             tableauxReference = dataInterface.getTableauxReference();
             conceptText.setText(tableauxReference.getConcept());
-           // conceptText.setSize(100, 100);
+            // conceptText.setSize(100, 100);
             conceptText.setVisible(true);
-             if(tableauxReference.isClashFree()){
-                 risClashes.setText("E' SODDISFACIBILE");
-              //   risClashes.setSize(100, 100);
-                 risClashes.setVisible(true);
-             }else {
-                risClashes.setText("E' INSODDISFACIBILE");
-               // risClashes.setSize(100, 100);
+            if(tableauxReference.isClashFree()) {
+                risClashes.setText("E' SODDISFACIBILE");
+                //   risClashes.setSize(100, 100);
                 risClashes.setVisible(true);
-                listClashes.setText("Ecco i Clash: "+tableauxReference.getClashes());
+            } else {
+                risClashes.setText("E' INSODDISFACIBILE");
+                // risClashes.setSize(100, 100);
+                risClashes.setVisible(true);
+                listClashes.setText("Ecco i Clash: " + tableauxReference.getClashes());
                 listClashes.setVisible(true);
             }
-            computationalTime.setText(getTime()+"ms");
+            computationalTime.setText(getTime() + "ms");
             computationalTime.setVisible(true);
-            
-        } catch (OWLException ex) {
+        } catch(OWLException ex) {
             Logger.getLogger(OutputTableaux.class.getName()).log(Level.SEVERE, null, ex);
         }
-          
     }
     
     /**
@@ -250,45 +226,8 @@ public class OutputTableaux extends javax.swing.JFrame {
     }//GEN-LAST:event_newConceptButtonActionPerformed
 
     private void closeFrameButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeFrameButtonActionPerformed
-        // TODO add your handling code here:
         dispose();
     }//GEN-LAST:event_closeFrameButtonActionPerformed
-
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(OutputTableaux.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(OutputTableaux.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(OutputTableaux.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(OutputTableaux.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-              //  new OutputTableaux().setVisible(true);
-            }
-        });
-    }
-
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton closeFrameButton;
     private javax.swing.JLabel computationalTime;
