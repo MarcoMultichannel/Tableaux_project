@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id "com.github.johnrengelman.shadow" version "7.1.2"
 }
 
 group 'org.project.tableaux'
@@ -24,12 +25,9 @@ test {
     useJUnitPlatform()
 }
 
-jar {
+shadowJar {
     manifest {
         attributes 'Main-Class': 'MainFrame'
     }
-    from {
-        duplicatesStrategy = DuplicatesStrategy.INCLUDE
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
+    mergeServiceFiles()
 }

@@ -1,8 +1,0 @@
-Prefix: ALC: <urn://alc/>
-
-Class: ALC:A
-Class: ALC:B
-ObjectProperty: ALC:R
-
-Class: ALC:A
-   SubClassOf: ALC:B
