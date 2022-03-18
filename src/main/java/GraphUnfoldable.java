@@ -2,7 +2,6 @@
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 
 /*
@@ -15,7 +14,7 @@ import org.semanticweb.owlapi.model.OWLClassExpression;
  * @author cirom
  */
 public class GraphUnfoldable {
-    private HashMap<OWLClassExpression, Vertex> verticesMap;
+    public HashMap<OWLClassExpression, Vertex> verticesMap;
 
     public GraphUnfoldable() {
         this.verticesMap = new HashMap<>();
@@ -24,7 +23,15 @@ public class GraphUnfoldable {
 
 
     public GraphUnfoldable(GraphUnfoldable unfoldable) {
-        this.verticesMap = new HashMap<>(unfoldable.verticesMap);
+        this.verticesMap = new HashMap<>();
+        for(OWLClassExpression ce: unfoldable.verticesMap.keySet()){
+            addVertex(ce);
+            for(Vertex adj:unfoldable.verticesMap.get(ce).getAdjacencyList()){
+                OWLClassExpression target=adj.getLabel();
+                addVertex(target);
+                addEdge(ce, target);
+            }
+        }
     }
 
 
@@ -69,6 +76,19 @@ public class GraphUnfoldable {
         sourceVertex.setBeingVisited(false);
         sourceVertex.setVisited(true);
         return false;
+    }
+
+
+    public String printGraph(){
+        String result="";
+        for(OWLClassExpression ce:verticesMap.keySet()){
+            List<Vertex> nodes=verticesMap.get(ce).getAdjacencyList();
+            List<OWLClassExpression> labels=new ArrayList<>();
+            for(Vertex v:nodes)
+                labels.add(v.getLabel());
+            if(!labels.isEmpty()) result=ce+" -> "+labels+"\n"+result;
+        }
+        return result;
     }
 
 }
