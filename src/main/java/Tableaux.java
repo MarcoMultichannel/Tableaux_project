@@ -73,6 +73,7 @@ public class Tableaux implements OWLReasoner {
             subclassAxioms.add(new OWLSubClassOfAxiomImpl(classes.get(1), classes.get(0), new HashSet<>()));
         }
         //Costruisco componente general
+        subclassAxioms.removeAll(parser.getSubClassAxioms(Tbox_unfoldable));
         concept_Tbox = getTboxConcept(subclassAxioms);
     }
 
@@ -105,17 +106,33 @@ public class Tableaux implements OWLReasoner {
 
     private @NotNull
 
-    List<OWLAxiom> getUnfoldableComponent(List<OWLAxiom> axioms) {
+    List<OWLAxiom> getUnfoldableComponent(List<OWLAxiom> axioms) throws OWLException {
         List<OWLAxiom> result = new ArrayList<>();
         for(OWLAxiom axiom : axioms) {
-            if(parser.isSubClassOfAxiom(axiom) && !checkIfGraphAcyclic(axiom)) {
-                //Se è vera posso aggiungere l'inclusione alla componente unfoldable
-                createAndAddVertex(axiom);
-                result.add(axiom);
+            if(parser.isSubClassOfAxiom(axiom)){
+                OWLClassExpression sx=parser.unpackSubClassAxioms((OWLSubClassOfAxiom)axiom).get(0);
+                //(NEW)Proviamo il check solo se sx è atomica
+                if(parser.isClass(sx) && !checkIfGraphAcyclic(axiom)) {
+                    //Se è vera posso aggiungere l'inclusione alla componente unfoldable
+                    createAndAddVertex(axiom);
+                    result.add(axiom);
+                }
             }
-            if(parser.isEquivalentClassesAxiom(axiom) && !checkEquivalenceMethod(axiom, result)) {
-                //Per equivalenze
-                result.add(axiom);
+            
+            if(parser.isEquivalentClassesAxiom(axiom)){
+                OWLClassExpression sx=parser.unpackEquilvalentClassesAxiom((OWLEquivalentClassesAxiom)axiom).get(0);
+                OWLClassExpression dx=parser.unpackEquilvalentClassesAxiom((OWLEquivalentClassesAxiom)axiom).get(1);
+                //(NEW)Equivalenze tra classi atomiche gestite diversamente
+                if(parser.isClass(sx) && parser.isClass(dx)){
+                    List<OWLAxiom> inclusions=new ArrayList<>();
+                    inclusions.add(new OWLSubClassOfAxiomImpl(sx, dx, new HashSet<>()));
+                    result.addAll(getUnfoldableComponent(inclusions));
+                }
+                //(NEW)Proviamo il check solo se sx è atomica
+                if(parser.isClass(sx) && !checkEquivalenceMethod(axiom, result)) {
+                    //Per equivalenze
+                    result.add(axiom);
+                }
             }
         }
         return result;
@@ -130,8 +147,12 @@ public class Tableaux implements OWLReasoner {
             OWLClassExpression subclass = ce.get(0);
             OWLClassExpression superclass = ce.get(1);
             unfoldableGraphTBox.addVertex(subclass);
-            unfoldableGraphTBox.addVertex(superclass);
-            unfoldableGraphTBox.addEdge(subclass, superclass);
+            //(NEW)Aggiungiamo tutte le classi atomiche che compaiono a destra
+            Set<OWLClass> atomicClasses=superclass.getClassesInSignature();
+            for(OWLClass atomicClass : atomicClasses){
+                unfoldableGraphTBox.addVertex(atomicClass);
+                unfoldableGraphTBox.addEdge(subclass, atomicClass);
+            }
         } catch(OWLException ex) {
             Logger.getLogger(Tableaux.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -181,8 +202,12 @@ public class Tableaux implements OWLReasoner {
             OWLClassExpression superclass = ce.get(1);
             //Aggiungiamo i vertici e gli archi
             unfoldableGraphTemp.addVertex(subclass);
-            unfoldableGraphTemp.addVertex(superclass);
-            unfoldableGraphTemp.addEdge(subclass, superclass);
+            //(NEW)Aggiungiamo tutte le classi atomiche che compaiono a destra
+            Set<OWLClass> atomicClasses=superclass.getClassesInSignature();
+            for(OWLClass atomicClass : atomicClasses){
+                unfoldableGraphTemp.addVertex(atomicClass);
+                unfoldableGraphTemp.addEdge(subclass, atomicClass);
+            }
             //Controlliamo se ha un ciclo
             res = unfoldableGraphTemp.hasCycle();
         } catch(OWLException ex) {
@@ -344,18 +369,19 @@ public class Tableaux implements OWLReasoner {
             // verifichiamo ora le equivalenze
             for(OWLEquivalentClassesAxiom equivalenceAxiom : equivalenceAxioms) {
                 try {
-                    // per ogni inclusione prendiamo parte sx e dx
+                    // per ogni equivalenze prendiamo parte sx e dx
                     List<OWLClassExpression> ceAxiom = parser.unpackEquilvalentClassesAxiom((OWLEquivalentClassesAxiom) equivalenceAxiom);
                     OWLClassExpression sxAxiom = ceAxiom.get(0);
                     OWLClassExpression dxAxiom = ceAxiom.get(1);
-                    // applico regole espansione per le inclusioni
+                    // applico regole espansione per le equivalenze
                     if(individual.label.contains(sxAxiom))
                         individual.addConcept(dxAxiom);
+                    if(individual.label.contains(new OWLObjectComplementOfImpl(sxAxiom)))
+                        individual.addConcept(new OWLObjectComplementOfImpl(dxAxiom));
                 } catch(OWLException ex) {
                     Logger.getLogger(Tableaux.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
-            // clash Check
             clashes = getClashes(individual);
         } catch(OWLException ex) {
             Logger.getLogger(Tableaux.class.getName()).log(Level.SEVERE, null, ex);
@@ -710,7 +736,7 @@ public class Tableaux implements OWLReasoner {
     @Override
 
     public boolean isSatisfiable(OWLClassExpression classExpression) {
-        timeElapsed = execute(classExpression);
+        timeElapsed = execute(classExpression.getNNF());
         return clashes.isEmpty();
     }
 

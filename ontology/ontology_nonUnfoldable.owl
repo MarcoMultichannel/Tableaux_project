@@ -22,33 +22,21 @@ ObjectProperty: ALC:T
 Class: ALC:A
 
     SubClassOf: 
-        ALC:R some ALC:B
+        ALC:R some ALC:A
     
     
 Class: ALC:B
 
     SubClassOf: 
-        ALC:E
+        ALC:C
     
 Class: ALC:C
 
+	SubClassOf: 
+        ALC:B
     
 Class: ALC:D
 
     EquivalentTo: 
-        ALC:A
-         and ALC:C
-    
-    
-Class: ALC:E
-
-    SubClassOf: 
-        ALC:B
-    
-    
-Class: ALC:F
-
-    SubClassOf: 
         ALC:C
-    
     
