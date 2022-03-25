@@ -1,0 +1,4 @@
+ALC:A and ALC:C
+ALC:A and ALC:B and not(ALC:C)
+not(ALC:B or ALC:A)
+(ALC:A and (not(ALC:A))) or (ALC:B and  (not(ALC:B)))

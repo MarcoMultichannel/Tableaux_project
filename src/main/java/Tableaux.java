@@ -440,13 +440,17 @@ public class Tableaux implements OWLReasoner {
             Property disjointLabel;
             int i = 1;
             for(OWLClassExpression or : individual.previousLabelsMap.keySet()) {
-                for(ArrayList<OWLClassExpression> oldLabel : individual.previousLabelsMap.get( or)) {
+                for(ArrayList<OWLClassExpression> oldLabel : individual.previousLabelsMap.get(or)) {
                     disjointLabel = model.createProperty(TAB_NAMESPACE + "OR" + i);
                     i++;
                     individualResource.addLiteral(disjointLabel, formatLabel(oldLabel, or) + ", CLASH.");
                 }
             }
-            Property lastLabel = model.createProperty(TAB_NAMESPACE + "OR" + i);
+            Property lastLabel;
+            if(i==1)
+                lastLabel = model.createProperty(TAB_NAMESPACE + "L");
+            else
+                lastLabel = model.createProperty(TAB_NAMESPACE + "OR" + i);
             String labelStr;
             if(individual.lastOR != null) {
                 labelStr = formatLabel(individual.label, individual.lastOR);
